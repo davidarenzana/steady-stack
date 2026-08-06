@@ -1,0 +1,8 @@
+# pnpm 11 bloquea los scripts de instalación por defecto y pide decidir uno a uno.
+# `maplibre-gl` se deniega a propósito: entra como dependencia transitiva de Unovis
+# por sus componentes de mapa, que este proyecto no usa.
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+  vue-demi: true
+  maplibre-gl: false

@@ -53,123 +53,52 @@ Aplican a todas las tareas, sin excepción:
 
 ---
 
-## Tarea 1: Andamiaje del proyecto
+## Tarea 1: Andamiaje del proyecto — COMPLETADA
 
-**Ficheros:**
-- Crear: `package.json`
-- Crear: `nuxt.config.ts`
-- Crear: `tsconfig.json`
-- Crear: `vitest.config.ts`
-- Crear: `core/smoke.test.ts`
+Ejecutada el 2026-08-06. Se instaló el stack completo del spec, no solo lo mínimo del motor
+de cálculo, para no volver a parar por instalaciones en los planes 2 y 3.
 
-**Interfaces:**
-- Consume: nada
-- Produce: `pnpm test` ejecuta los tests de `core/`; `pnpm dev` arranca Nuxt
+**Verificado:** `pnpm test` (2 en verde), `pnpm typecheck` (exit 0), `pnpm build` (exit 0),
+`pnpm dev` sirve la home con HTTP 200.
 
-El directorio ya contiene `.git/`, `.gitignore`, `docs/` y `.claude/`. **No uses `nuxi init`**:
-sobrescribiría el `.gitignore` existente. Crea los ficheros a mano tal y como se indica.
+### Tres cosas que no salieron a la primera
 
-- [ ] **Paso 1: Crear `package.json`**
+**1. TypeScript hay que fijarlo a la 5.x.** `pnpm add -D typescript` resuelve a la **7.0.2**, el
+compilador nativo en Go, que ya no exporta `typescript/lib/tsc`. `vue-tsc` lo necesita y
+`pnpm typecheck` muere con `ERR_PACKAGE_PATH_NOT_EXPORTED`. Está fijado a `5.9.3`. **No lo subas
+a la 7 hasta que vue-tsc lo soporte.**
 
-```json
-{
-  "name": "my-stonks",
-  "private": true,
-  "type": "module",
-  "packageManager": "pnpm@11.8.0",
-  "engines": {
-    "node": ">=22.0.0"
-  },
-  "scripts": {
-    "dev": "nuxt dev",
-    "build": "nuxt build",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  }
-}
+**2. pnpm 11 bloquea los scripts de instalación** y ya no lee el campo `pnpm` de `package.json`:
+la configuración vive en `pnpm-workspace.yaml` bajo la clave `allowBuilds`, con booleanos por
+paquete. `maplibre-gl` se deniega a propósito — entra como dependencia transitiva de Unovis por
+sus componentes de mapa, que no usamos. `better-sqlite3` resultó no necesitar compilación: trae
+binarios precompilados.
+
+**3. `shadcn-vue init` genera un tema incompleto.** En la versión 2.8.1, el estilo `vega` trae
+`cssVars: {}` vacío: deja la hoja referenciando `bg-background` y `border-border` sin declarar
+ninguna variable, y `pnpm build` falla con *Cannot apply unknown utility class*. Añadir
+componentes tampoco las inyecta. El tema de `app/assets/css/tailwind.css` está **escrito a mano**:
+neutros en OKLCH con desviación fría (tono 258), modo claro y oscuro, y `--chart-1..5`. Si vuelves
+a ejecutar el CLI con `--force`, lo sobrescribirá.
+
+### Estado resultante
+
+```
+package.json          scripts: dev, build, preview, postinstall, test, test:watch, typecheck
+pnpm-workspace.yaml   allowBuilds
+nuxt.config.ts        shadcn-nuxt, @tailwindcss/vite, css
+tsconfig.json         alias ~/ @/ ~~/ #core/
+vitest.config.ts      dos proyectos: core (node) y app (happy-dom, vacío hasta el plan 3)
+components.json       shadcn-vue: estilo reka-vega, base mist, iconos lucide
+app/app.vue           NuxtRouteAnnouncer + NuxtPage
+app/pages/index.vue   marcador de posición
+app/lib/utils.ts      cn() de shadcn-vue
+app/components/ui/button/   Button de prueba, verifica que la cadena funciona
+core/smoke.test.ts    2 tests
+core/  server/{api,db,providers}/  data/    vacíos, con .gitkeep
 ```
 
-- [ ] **Paso 2: Instalar dependencias**
-
-```bash
-pnpm add nuxt vue vue-router decimal.js
-pnpm add -D vitest typescript
-```
-
-- [ ] **Paso 3: Crear `nuxt.config.ts`**
-
-```ts
-export default defineNuxtConfig({
-  compatibilityDate: '2026-08-06',
-  devtools: { enabled: true },
-})
-```
-
-- [ ] **Paso 4: Crear `tsconfig.json`**
-
-```json
-{
-  "extends": "./.nuxt/tsconfig.json",
-  "compilerOptions": {
-    "strict": true,
-    "noUncheckedIndexedAccess": true
-  }
-}
-```
-
-- [ ] **Paso 5: Crear `vitest.config.ts`**
-
-Los tests de `core/` no necesitan el entorno de Nuxt: son funciones puras. Arrancarlo solo los
-haría más lentos.
-
-```ts
-import { defineConfig } from 'vitest/config'
-
-export default defineConfig({
-  test: {
-    include: ['core/**/*.test.ts'],
-    environment: 'node',
-  },
-})
-```
-
-- [ ] **Paso 6: Crear el test de humo `core/smoke.test.ts`**
-
-```ts
-import { describe, expect, it } from 'vitest'
-import Decimal from 'decimal.js'
-
-describe('andamiaje', () => {
-  it('vitest ejecuta los tests de core', () => {
-    expect(true).toBe(true)
-  })
-
-  it('decimal.js está disponible y no usa coma flotante', () => {
-    expect(new Decimal(0.1).plus(0.2).toString()).toBe('0.3')
-    expect(0.1 + 0.2).not.toBe(0.3)
-  })
-})
-```
-
-- [ ] **Paso 7: Ejecutar los tests**
-
-Ejecuta: `pnpm test`
-Esperado: 2 tests en verde. El segundo demuestra por qué existe `decimal.js`: `0.1 + 0.2` en
-coma flotante da `0.30000000000000004`.
-
-- [ ] **Paso 8: Comprobar que Nuxt prepara el proyecto**
-
-Ejecuta: `pnpm exec nuxt prepare`
-Esperado: termina sin error y genera el directorio `.nuxt/`.
-
-- [ ] **Paso 9: Commit**
-
-```bash
-git add package.json pnpm-lock.yaml nuxt.config.ts tsconfig.json vitest.config.ts core/smoke.test.ts
-git commit -m "Andamiaje: Nuxt 4, TypeScript, Vitest y decimal.js"
-```
+Iconos: **`@lucide/vue`**, no `lucide-vue-next`, que está deprecado.
 
 ---
 
