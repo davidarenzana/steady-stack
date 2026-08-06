@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+.pnpm-store/
+
+# Nuxt
+.nuxt/
+.output/
+.data/
+dist/
+
+# Base de datos local
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Sistema y editores
+.DS_Store
+*.log
+.vscode/
+.idea/
