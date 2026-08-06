@@ -51,7 +51,7 @@ automáticamente.
 | Componentes | shadcn-vue (sobre reka-ui) | 2.8.1 / 2.10.1 |
 | Gráficos | Unovis | @unovis/vue 1.6.7 |
 | Decimales | decimal.js | — |
-| Tests | Vitest | — |
+| Tests | Vitest + @vue/test-utils + happy-dom | — |
 
 **Por qué Nuxt y no Vue + Vite.** La API de Yahoo Finance responde sin cabecera
 `Access-Control-Allow-Origin` (comprobado). Un cliente en el navegador no puede llamarla: hace
@@ -218,23 +218,74 @@ app/            páginas y componentes Vue
 
 ## 11. Estrategia de test
 
-Vitest. El grueso de la cobertura vive en `core/`, que se prueba llamando funciones sin levantar
-nada.
+Vitest en las cuatro capas. El grueso de la cobertura vive en `core/`, que se prueba llamando
+funciones sin levantar nada.
 
-Casos que deben existir:
+### `core/` — motor de cálculo
+
+Donde está el riesgo real: un céntimo mal redondeado se compone durante 300 meses de proyección.
 
 - **Capitalización**: `(1+0,09)^(1/12)-1` aplicado doce veces sobre 1.000 € da 1.090,00 € exactos
 - **Expansión de aportaciones**: una regla más un mes saltado más un extra produce la serie correcta
 - **Cambio de regla**: subir la aportación no altera los meses anteriores
 - **Participaciones**: importe dividido entre VL, con el redondeo esperado
-- **Reparto**: 200 € al 80/20 suman exactamente 200 €, sin céntimos perdidos
+- **Reparto**: 200 € al 80/20 dan 160 € y 40 €, y suman exactamente 200 €
+- **Momento de la aportación**: `inicio` devenga el mes de llegada, `fin` no
 - **XIRR**: contra un caso de flujos conocido
+
+### Proveedores de precio
+
+Contra respuestas grabadas, nunca contra la red. Un test que llama a Yahoo se pone rojo cuando
+no hay conexión, y eso no informa sobre el código propio.
+
+- **Resolución de ISIN**: una respuesta con varios candidatos los devuelve todos, sin elegir
+- **Huecos en la serie**: los `null` de los últimos días no rompen la valoración
+- **Override manual**: un VL introducido a mano prevalece sobre el del proveedor
+
+### Capa de datos
+
+Integración contra un fichero SQLite temporal.
+
 - **Idempotencia de la sincronización**: dos ejecuciones seguidas no duplican filas `nav`
 - **Materialización**: una compra ya ejecutada no cambia al editar la regla
 
-Los proveedores se prueban contra respuestas grabadas, no contra la red.
+### Interfaz
 
-## 12. Datos iniciales
+Componentes con `@vue/test-utils` sobre `happy-dom`. Sin navegador: se comprueba que, dado un
+estado, el componente renderiza lo correcto.
+
+- **Formato**: aportado 2.200 € y valor 2.431,50 € se muestran como `+231,50 €` y `+10,52 %`
+- **Series del gráfico**: `<EvolutionChart>` recibe la cartera real y los escenarios activos
+- **Estado vacío**: sin aportaciones registradas no se renderiza un gráfico en blanco ni un NaN
+- **Fecha de valoración**: se muestra a qué día corresponde el último VL disponible
+
+Los tests de extremo a extremo con navegador quedan fuera de la v1.
+
+## 12. Método de implementación
+
+**SDD + TDD.** El plan se descompone en tareas acotadas; cada una la ejecuta un subagente
+`implementer` y la contrasta un subagente `reviewer` antes de darla por cerrada.
+
+Dentro de cada tarea, el ciclo es rojo → verde:
+
+1. Escribir el test que describe el comportamiento
+2. Ejecutarlo y **verlo fallar**. Un test que pasa antes de existir el código no prueba nada
+3. Escribir el mínimo código que lo pone en verde
+4. Volver a ejecutarlo y confirmar
+
+Ninguna tarea se declara terminada sin la salida real del comando de verificación.
+
+Agentes definidos en `.claude/agents/`:
+
+| Agente | Modelo | Papel |
+|---|---|---|
+| `planner` | opus | Descompone el spec en fases y tareas verificables |
+| `implementer` | sonnet | Ejecuta una tarea siguiendo TDD |
+| `reviewer` | sonnet | Contrasta contra el spec; no modifica código |
+
+Los commits los lleva el agente principal, que es quien conoce la intención del cambio.
+
+## 13. Datos iniciales
 
 ```
 Cartera: indexada, EUR
@@ -255,7 +306,7 @@ Escenarios
   Horizonte      25 años (configurable)
 ```
 
-## 13. Notas sobre la hoja de referencia
+## 14. Notas sobre la hoja de referencia
 
 La hoja de cálculo que originó el proyecto pertenece a un tercero y sirvió de referencia, no de
 especificación. Dos cosas se tomaron de ella y una se descartó:
@@ -266,7 +317,7 @@ especificación. Dos cosas se tomaron de ella y una se descartó:
   (ISIN, fecha de compra, precio, participaciones, valor actual)
 - **Se descarta** la convención `r / 12`, por lo explicado en la sección 5
 
-## 14. Aplazado a v2
+## 15. Aplazado a v2
 
 - Usuarios y autenticación
 - Varias carteras en la interfaz
