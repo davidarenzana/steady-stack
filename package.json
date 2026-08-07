@@ -16,7 +16,8 @@
     "typecheck": "nuxt typecheck",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "capture:fixtures": "tsx scripts/capture-yahoo-fixtures.ts"
   },
   "dependencies": {
     "@lucide/vue": "^1.28.0",

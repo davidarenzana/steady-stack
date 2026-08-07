@@ -1,0 +1,71 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "currency": "EUR",
+          "symbol": "IE00BYX5NX33.SG",
+          "exchangeName": "STU",
+          "fullExchangeName": "Stuttgart",
+          "instrumentType": "MUTUALFUND",
+          "firstTradeDate": null,
+          "regularMarketTime": 1786114839,
+          "hasPrePostMarketData": false,
+          "gmtoffset": 7200,
+          "timezone": "CEST",
+          "exchangeTimezoneName": "Europe/Berlin",
+          "regularMarketPrice": 14.37,
+          "fiftyTwoWeekHigh": 10.84,
+          "fiftyTwoWeekLow": 10.73,
+          "regularMarketDayHigh": 10.84,
+          "regularMarketDayLow": 10.73,
+          "shortName": "Fidelity MSCI World Index Fund ",
+          "chartPreviousClose": 14.58,
+          "priceHint": 2,
+          "currentTradingPeriod": {
+            "pre": {
+              "timezone": "CEST",
+              "start": 1786082400,
+              "end": 1786082400,
+              "gmtoffset": 7200
+            },
+            "regular": {
+              "timezone": "CEST",
+              "start": 1786082400,
+              "end": 1786132800,
+              "gmtoffset": 7200
+            },
+            "post": {
+              "timezone": "CEST",
+              "start": 1786132800,
+              "end": 1786132800,
+              "gmtoffset": 7200
+            }
+          },
+          "dataGranularity": "1d",
+          "range": "1y",
+          "validRanges": [
+            "1mo",
+            "3mo",
+            "6mo",
+            "ytd",
+            "1y",
+            "2y",
+            "5y",
+            "10y",
+            "max"
+          ]
+        },
+        "indicators": {
+          "quote": [
+            {}
+          ],
+          "adjclose": [
+            {}
+          ]
+        }
+      }
+    ],
+    "error": null
+  }
+}

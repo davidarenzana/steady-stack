@@ -1,0 +1,26 @@
+{
+  "count": 2,
+  "quotes": [
+    {
+      "exchange": "STU",
+      "shortname": "Fidelity MSCI World Index Fund ",
+      "quoteType": "MUTUALFUND",
+      "symbol": "IE00BYX5NX33.SG",
+      "longname": null,
+      "exchDisp": "Stuttgart",
+      "typeDisp": "Fund",
+      "isYahooFinance": true
+    },
+    {
+      "exchange": "FRA",
+      "shortname": "0P0001CLDK.F",
+      "quoteType": "MUTUALFUND",
+      "symbol": "0P0001CLDK.F",
+      "longname": "Fidelity MSCI World Index Fund",
+      "exchDisp": "Frankfurt",
+      "typeDisp": "Fund",
+      "isYahooFinance": true
+    }
+  ],
+  "news": []
+}

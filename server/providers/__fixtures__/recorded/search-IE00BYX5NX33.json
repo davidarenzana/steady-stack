@@ -1,0 +1,46 @@
+{
+  "explains": [],
+  "count": 2,
+  "quotes": [
+    {
+      "exchange": "STU",
+      "shortname": "Fidelity MSCI World Index Fund ",
+      "quoteType": "MUTUALFUND",
+      "symbol": "IE00BYX5NX33.SG",
+      "index": "quotes",
+      "score": 20002,
+      "typeDisp": "Fund",
+      "exchDisp": "Stuttgart",
+      "isYahooFinance": true
+    },
+    {
+      "exchange": "FRA",
+      "shortname": "0P0001CLDK.F",
+      "quoteType": "MUTUALFUND",
+      "symbol": "0P0001CLDK.F",
+      "index": "quotes",
+      "score": 20001,
+      "typeDisp": "Fund",
+      "longname": "Fidelity MSCI World Index Fund",
+      "exchDisp": "Frankfurt",
+      "isYahooFinance": true
+    }
+  ],
+  "news": [],
+  "nav": [],
+  "lists": [],
+  "researchReports": [],
+  "screenerFieldResults": [],
+  "totalTime": 38,
+  "timeTakenForQuotes": 432,
+  "timeTakenForNews": 0,
+  "timeTakenForAlgowatchlist": 400,
+  "timeTakenForPredefinedScreener": 400,
+  "timeTakenForCrunchbase": 0,
+  "timeTakenForNav": 400,
+  "timeTakenForResearchReports": 0,
+  "timeTakenForQuestions": 0,
+  "timeTakenForScreenerField": 0,
+  "timeTakenForCulturalAssets": 0,
+  "timeTakenForSearchLists": 0
+}
