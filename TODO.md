@@ -4,10 +4,13 @@ Open threads, so none of this has to be reconstructed from memory.
 
 ## Next up
 
-**Task 6 of the plan: unit purchases.** `core/purchases.ts`, turning a contribution plus the NAV of
-the day into the units bought. See
-[the plan](docs/superpowers/plans/2026-08-06-motor-de-calculo.md), section "Tarea 6". Tasks 7 and 8
-(valuation, XIRR) follow, and that closes the calculation engine.
+**The calculation engine is finished.** Tasks 1–8 of
+[the plan](docs/superpowers/plans/2026-08-06-motor-de-calculo.md) are done and its closing checks
+pass: 76 tests green, `core/` still imports nothing from Nuxt, Drizzle, h3 or ofetch.
+
+What comes next is plan 2 — the persistence layer and the network: Drizzle schema and migrations,
+`PriceProvider` with the Yahoo implementation, idempotent NAV synchronisation, and the Nitro routes.
+That plan is not written yet.
 
 ## Deferred by decision
 

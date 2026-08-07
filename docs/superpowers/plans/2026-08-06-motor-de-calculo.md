@@ -1017,7 +1017,7 @@ error a lo largo de los 300 meses del horizonte."
 Las participaciones se redondean a **6 decimales, ROUND_HALF_UP**. Si el bróker ejecutó con otra
 precisión, la compra se corrige a mano: la sección 4 del spec lo contempla.
 
-- [ ] **Paso 1: Escribir el test que falla**
+- [x] **Paso 1: Escribir el test que falla**
 
 Crear `core/purchases.test.ts`:
 
@@ -1094,12 +1094,12 @@ describe('buildPurchases', () => {
 })
 ```
 
-- [ ] **Paso 2: Ejecutar y verlo fallar**
+- [x] **Paso 2: Ejecutar y verlo fallar**
 
 Ejecuta: `pnpm test core/purchases.test.ts`
 Esperado: FALLA por no resolverse `./purchases`.
 
-- [ ] **Paso 3: Crear `core/purchases.ts`**
+- [x] **Paso 3: Crear `core/purchases.ts`**
 
 ```ts
 import Decimal from './decimal'
@@ -1158,12 +1158,12 @@ export function buildPurchases(
 }
 ```
 
-- [ ] **Paso 4: Ejecutar y verlo pasar**
+- [x] **Paso 4: Ejecutar y verlo pasar**
 
 Ejecuta: `pnpm test core/purchases.test.ts`
 Esperado: 7 tests en verde.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add core/purchases.ts core/purchases.test.ts
@@ -1189,7 +1189,7 @@ en el redondeo."
   - `interface Valuation { value: Cents; invested: Cents; gain: Cents; gainRatio: number; byFund: FundPosition[] }`
   - `function valuate(purchases: Purchase[], navByFund: Record<string, string>): Valuation`
 
-- [ ] **Paso 1: Escribir el test que falla**
+- [x] **Paso 1: Escribir el test que falla**
 
 Crear `core/valuation.test.ts`:
 
@@ -1255,12 +1255,12 @@ describe('valuate', () => {
 })
 ```
 
-- [ ] **Paso 2: Ejecutar y verlo fallar**
+- [x] **Paso 2: Ejecutar y verlo fallar**
 
 Ejecuta: `pnpm test core/valuation.test.ts`
 Esperado: FALLA por no resolverse `./valuation`.
 
-- [ ] **Paso 3: Crear `core/valuation.ts`**
+- [x] **Paso 3: Crear `core/valuation.ts`**
 
 ```ts
 import Decimal from './decimal'
@@ -1345,12 +1345,12 @@ export function valuate(purchases: Purchase[], navByFund: Record<string, string>
 }
 ```
 
-- [ ] **Paso 4: Ejecutar y verlo pasar**
+- [x] **Paso 4: Ejecutar y verlo pasar**
 
 Ejecuta: `pnpm test core/valuation.test.ts`
 Esperado: 6 tests en verde.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add core/valuation.ts core/valuation.test.ts
@@ -1374,7 +1374,7 @@ git commit -m "Valoración de la cartera por posición y agregada"
 Convenio de signos: las aportaciones son **negativas** (sale dinero del bolsillo) y el valor
 actual de la cartera entra como flujo **positivo** en la fecha de valoración.
 
-- [ ] **Paso 1: Escribir el test que falla**
+- [x] **Paso 1: Escribir el test que falla**
 
 Crear `core/returns.test.ts`:
 
@@ -1460,12 +1460,12 @@ describe('xirr', () => {
 })
 ```
 
-- [ ] **Paso 2: Ejecutar y verlo fallar**
+- [x] **Paso 2: Ejecutar y verlo fallar**
 
 Ejecuta: `pnpm test core/returns.test.ts`
 Esperado: FALLA por no resolverse `./returns`.
 
-- [ ] **Paso 3: Crear `core/returns.ts`**
+- [x] **Paso 3: Crear `core/returns.ts`**
 
 ```ts
 import type { Cents, IsoDate } from './types'
@@ -1550,18 +1550,20 @@ export function xirr(flows: CashFlow[]): number {
 }
 ```
 
-- [ ] **Paso 4: Ejecutar y verlo pasar**
+- [x] **Paso 4: Ejecutar y verlo pasar**
 
 Ejecuta: `pnpm test core/returns.test.ts`
 Esperado: 8 tests en verde.
 
-- [ ] **Paso 5: Ejecutar la suite completa**
+- [x] **Paso 5: Ejecutar la suite completa**
 
 Ejecuta: `pnpm test`
-Esperado: los 67 tests de `core/` en verde (2 de humo, 9 de reparto, 6 de tasas,
-9 de meses, 12 de aportaciones, 8 de escenarios, 7 de compras, 6 de valoración, 8 de XIRR).
+Esperado: los tests de `core/` en verde. Resultado real: **76** (2 de humo, 9 de reparto,
+7 de tasas, 12 de meses, 17 de aportaciones, 8 de escenarios, 7 de compras, 6 de valoración,
+8 de XIRR). La estimación de 67 de este plan se quedó corta en los módulos de meses y
+aportaciones, que pidieron más casos límite de los previstos.
 
-- [ ] **Paso 6: Commit**
+- [x] **Paso 6: Commit**
 
 ```bash
 git add core/returns.ts core/returns.test.ts
@@ -1578,11 +1580,11 @@ si hay cambio de signo."
 
 Al terminar las ocho tareas debe cumplirse:
 
-- [ ] `pnpm test` termina en verde
-- [ ] `pnpm exec nuxt prepare` termina sin error
-- [ ] `grep -rE "from '(nuxt|drizzle|h3|ofetch)" core/` no devuelve nada — `core/` sigue puro
-- [ ] `grep -rn "/ 12" core/` solo aparece en `rates.ts` dentro de `pow(1/12)`, nunca como `rate / 12`
-- [ ] `grep -rn "parseFloat" core/` no devuelve nada
+- [x] `pnpm test` termina en verde
+- [x] `pnpm exec nuxt prepare` termina sin error
+- [x] `grep -rE "from '(nuxt|drizzle|h3|ofetch)" core/` no devuelve nada — `core/` sigue puro
+- [x] `grep -rn "/ 12" core/` solo aparece en `rates.ts` dentro de `pow(1/12)`, nunca como `rate / 12`
+- [x] `grep -rn "parseFloat" core/` no devuelve nada
 
 ## Qué queda fuera de este plan
 

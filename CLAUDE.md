@@ -128,7 +128,8 @@ hand-wrapped at 80 columns saying *why*, with the numbers when numbers justify i
 
 ## Current state
 
-The calculation engine is being built before any database or interface exists. Tasks 1–5 of the
-plan are done (domain types, exact splitting, rate conversion, month arithmetic, contribution
-expansion and scenario projection); tasks 6–8 (unit purchases, valuation, XIRR) are pending. 55
-tests passing. Nothing talks to a database or to the network yet. `TODO.md` holds the open threads.
+The calculation engine is complete and was built before any database or interface exists. Tasks 1–8
+of the plan are done: domain types, exact splitting, rate conversion, month arithmetic, contribution
+expansion, scenario projection, unit purchases, valuation and XIRR. 76 tests passing. Nothing talks
+to a database or to the network yet — that is plan 2, still unwritten. `TODO.md` holds the open
+threads.
