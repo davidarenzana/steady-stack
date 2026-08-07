@@ -2,8 +2,8 @@ import { monthRange } from './months'
 import type { Contribution, ContributionOverride, ContributionRule, Month } from './types'
 
 /**
- * Devuelve la regla vigente en un mes: la de `fromMonth` más tardío que no sea
- * posterior al mes consultado. `undefined` si ninguna regla ha entrado aún en vigor.
+ * Returns the rule in force in a month: the one with the latest `fromMonth` that is
+ * not after the month asked about. `undefined` if no rule has taken effect yet.
  */
 function ruleFor(rules: ContributionRule[], month: Month): ContributionRule | undefined {
   let active: ContributionRule | undefined
@@ -16,13 +16,13 @@ function ruleFor(rules: ContributionRule[], month: Month): ContributionRule | un
 }
 
 /**
- * Expande reglas y excepciones en la serie de aportaciones de un rango de meses.
+ * Expands rules and exceptions into the contribution series for a range of months.
  *
- * Las aportaciones son derivadas, no almacenadas: cambiar una regla recalcula la
- * serie sin tocar el histórico de compras ya materializadas.
+ * Contributions are derived, not stored: changing a rule recalculates the series
+ * without touching the history of purchases already materialised.
  *
- * Una excepción con `amount: null` salta el mes. Una excepción de un mes en el que
- * no hay regla vigente se ignora: sin regla no hay pesos con los que repartirla.
+ * An exception with `amount: null` skips the month. An exception for a month with no
+ * rule in force is ignored: with no rule there are no weights to split it across.
  */
 export function expandContributions(
   rules: ContributionRule[],
@@ -30,6 +30,16 @@ export function expandContributions(
   from: Month,
   to: Month,
 ): Contribution[] {
+  const seenFromMonths = new Set<Month>()
+  for (const rule of rules) {
+    if (seenFromMonths.has(rule.fromMonth)) {
+      throw new Error(
+        `Two contribution rules share the same start month: "${rule.fromMonth}"`,
+      )
+    }
+    seenFromMonths.add(rule.fromMonth)
+  }
+
   const overrideByMonth = new Map(overrides.map((o) => [o.month, o]))
   const contributions: Contribution[] = []
 
