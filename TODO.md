@@ -4,10 +4,10 @@ Open threads, so none of this has to be reconstructed from memory.
 
 ## Next up
 
-**Task 5 of the plan: scenario projection.** `core/scenarios.ts`, turning contributions plus an
-annual rate into a projected series. See
-[the plan](docs/superpowers/plans/2026-08-06-motor-de-calculo.md), section "Tarea 5". Tasks 6 to 8
-(unit purchases, valuation, XIRR) follow, and that closes the calculation engine.
+**Task 6 of the plan: unit purchases.** `core/purchases.ts`, turning a contribution plus the NAV of
+the day into the units bought. See
+[the plan](docs/superpowers/plans/2026-08-06-motor-de-calculo.md), section "Tarea 6". Tasks 7 and 8
+(valuation, XIRR) follow, and that closes the calculation engine.
 
 ## Deferred by decision
 
@@ -27,15 +27,6 @@ the command is:
 ```
 
 ## Housekeeping
-
-**The six commits on this branch are not on `main`.** They sit on
-`worktree-agente-committer`, pushed to origin but unmerged. Starting task 5 from `main` would mean
-working without the `committer` agent, the English codebase and the README. Merge or open a PR
-first.
-
-**The local directory is still `~/Sites/my-stonks`.** The repository, the package and the interface
-are all Steady Stack now; only the path on disk lags. It is a `mv` with no sessions open, so it
-cannot be done from inside a worktree.
 
 **`pnpm sync:nav` is specified but not written.** Section 9 of the spec describes it; the README
 deliberately omits it. It arrives with the persistence layer, not with the calculation engine.

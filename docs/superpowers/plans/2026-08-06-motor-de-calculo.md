@@ -808,7 +808,9 @@ que ya regía la anterior."
 
 ---
 
-## Tarea 5: Proyección de escenarios
+## Tarea 5: Proyección de escenarios — COMPLETADA
+
+Commit `a0e6b28`. Ocho tests en verde; 55 en total.
 
 **Ficheros:**
 - Crear: `core/scenarios.ts`
@@ -826,7 +828,7 @@ La fórmula, copiada de la sección 5 del spec:
 saldo(n) = (saldo(n-1) + aportaciones_inicio(n)) * (1 + r_mensual) + aportaciones_fin(n)
 ```
 
-- [ ] **Paso 1: Escribir el test que falla**
+- [x] **Paso 1: Escribir el test que falla**
 
 Crear `core/scenarios.test.ts`:
 
@@ -915,12 +917,12 @@ describe('projectScenario', () => {
 })
 ```
 
-- [ ] **Paso 2: Ejecutar y verlo fallar**
+- [x] **Paso 2: Ejecutar y verlo fallar**
 
 Ejecuta: `pnpm test core/scenarios.test.ts`
 Esperado: FALLA por no resolverse `./scenarios`.
 
-- [ ] **Paso 3: Crear `core/scenarios.ts`**
+- [x] **Paso 3: Crear `core/scenarios.ts`**
 
 ```ts
 import Decimal from './decimal'
@@ -982,12 +984,12 @@ export function projectScenario(
 }
 ```
 
-- [ ] **Paso 4: Ejecutar y verlo pasar**
+- [x] **Paso 4: Ejecutar y verlo pasar**
 
 Ejecuta: `pnpm test core/scenarios.test.ts`
 Esperado: 8 tests en verde.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add core/scenarios.ts core/scenarios.test.ts
