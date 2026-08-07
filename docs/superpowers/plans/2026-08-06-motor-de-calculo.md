@@ -102,7 +102,7 @@ Iconos: **`@lucide/vue`**, no `lucide-vue-next`, que está deprecado.
 
 ---
 
-## Tarea 2: Tipos del dominio y reparto exacto de importes
+## Tarea 2: Tipos del dominio y reparto exacto de importes — COMPLETADA
 
 **Ficheros:**
 - Crear: `core/types.ts`
@@ -121,7 +121,7 @@ Iconos: **`@lucide/vue`**, no `lucide-vue-next`, que está deprecado.
   - `interface Contribution { month: Month; amount: Cents; timing: Timing; weights: Weight[] }`
   - `function split(amount: Cents, weights: Weight[]): Record<string, Cents>`
 
-- [ ] **Paso 1: Escribir el test que falla**
+- [x] **Paso 1: Escribir el test que falla**
 
 Crear `core/money.test.ts`:
 
@@ -203,12 +203,12 @@ describe('split', () => {
 })
 ```
 
-- [ ] **Paso 2: Ejecutar el test y verlo fallar**
+- [x] **Paso 2: Ejecutar el test y verlo fallar**
 
 Ejecuta: `pnpm test core/money.test.ts`
 Esperado: FALLA con un error de resolución del módulo `./money`, que todavía no existe.
 
-- [ ] **Paso 3: Crear `core/types.ts`**
+- [x] **Paso 3: Crear `core/types.ts`**
 
 ```ts
 /** Importe monetario en céntimos enteros. Nunca euros en coma flotante. */
@@ -259,7 +259,7 @@ export interface Contribution {
 }
 ```
 
-- [ ] **Paso 4: Crear `core/money.ts`**
+- [x] **Paso 4: Crear `core/money.ts`**
 
 ```ts
 import type { Cents, Weight } from './types'
@@ -312,12 +312,12 @@ export function split(amount: Cents, weights: Weight[]): Record<string, Cents> {
 }
 ```
 
-- [ ] **Paso 5: Ejecutar el test y verlo pasar**
+- [x] **Paso 5: Ejecutar el test y verlo pasar**
 
 Ejecuta: `pnpm test core/money.test.ts`
 Esperado: 9 tests en verde.
 
-- [ ] **Paso 6: Commit**
+- [x] **Paso 6: Commit**
 
 ```bash
 git add core/types.ts core/money.ts core/money.test.ts
