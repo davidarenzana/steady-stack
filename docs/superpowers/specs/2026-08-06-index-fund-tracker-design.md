@@ -46,7 +46,7 @@ data was abandoned after six months. The application downloads net asset values 
 | Framework | Nuxt (Vue 3, SSR + Nitro) | 4.5.2 / 3.5.41 |
 | Language | TypeScript | — |
 | ORM | Drizzle | 0.45.2 |
-| Database | SQLite, file `data/stonks.db` | better-sqlite3 13.0.3 |
+| Database | SQLite, file `data/steady-stack.db` | better-sqlite3 13.0.3 |
 | Components | shadcn-vue (over reka-ui) | 2.8.1 / 2.10.1 |
 | Charts | Unovis | @unovis/vue 1.6.7 |
 | Decimals | decimal.js | — |

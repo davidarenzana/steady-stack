@@ -1,4 +1,4 @@
-# Dependencias
+# Dependencies
 node_modules/
 .pnpm-store/
 
@@ -8,17 +8,17 @@ node_modules/
 .data/
 dist/
 
-# Base de datos local
+# Local database
 data/*.db
 data/*.db-shm
 data/*.db-wal
 
-# Entorno
+# Environment
 .env
 .env.*
 !.env.example
 
-# Sistema y editores
+# System and editors
 .DS_Store
 *.log
 .vscode/

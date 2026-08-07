@@ -4,8 +4,8 @@ export default defineConfig({
   test: {
     projects: [
       {
-        // El motor de cálculo son funciones puras: no necesita DOM ni el
-        // entorno de Nuxt, y arrancarlos solo lo haría más lento.
+        // The calculation engine is pure functions: it needs neither the DOM nor
+        // the Nuxt environment, and starting them would only make it slower.
         test: {
           name: 'core',
           include: ['core/**/*.test.ts'],
@@ -13,7 +13,7 @@ export default defineConfig({
         },
       },
       {
-        // Tests de componente. Se llenará en el plan 3.
+        // Component tests. To be filled in by plan 3.
         test: {
           name: 'app',
           include: ['app/**/*.test.ts'],
