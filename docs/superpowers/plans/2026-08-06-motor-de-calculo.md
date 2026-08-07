@@ -29,7 +29,10 @@ Aplican a todas las tareas, sin excepción:
   reloj del sistema. Todas las fechas entran por parámetro.
 - **Un reparto suma el total exacto.** 200 € al 80/20 son 160 € y 40 €. Ningún céntimo se pierde
   ni se duplica.
-- **Idioma:** identificadores en inglés, comentarios y mensajes de error en español.
+- **Idioma:** todo en inglés — identificadores, comentarios, JSDoc, nombres de test y mensajes de
+  error. Las cifras en prosa mantienen la ortotipografía española (`1.090,00 €`, `9 %`); el texto de
+  interfaz va en castellano. Los ejemplos de código de este plan están en castellano porque se
+  escribieron antes de la regla: **traduce al implementarlos.** Ver la sección 12 del spec.
 - **TDD:** el test se escribe primero y **se ejecuta para verlo fallar** antes de escribir la
   implementación. Un test que pasa antes de existir el código no prueba nada.
 - **Formato de mes:** `YYYY-MM`. Ordena lexicográficamente igual que cronológicamente, así que
@@ -330,7 +333,10 @@ perdería céntimos."
 
 ---
 
-## Tarea 3: Conversión de tasa anual a mensual
+## Tarea 3: Conversión de tasa anual a mensual — COMPLETADA
+
+Commit `c0b7787`. El plan pedía 6 tests; hay 7: la auditoría añadió la frontera exacta del -100 %,
+que se acepta y aniquila el capital.
 
 **Ficheros:**
 - Crear: `core/decimal.ts`
@@ -346,7 +352,7 @@ perdería céntimos."
 Esta es la tarea donde vive la decisión financiera central del proyecto. La sección 5 del spec
 explica por qué `r / 12` está mal.
 
-- [ ] **Paso 1: Escribir el test que falla**
+- [x] **Paso 1: Escribir el test que falla**
 
 Crear `core/rates.test.ts`:
 
@@ -400,12 +406,12 @@ describe('monthlyRate', () => {
 })
 ```
 
-- [ ] **Paso 2: Ejecutar el test y verlo fallar**
+- [x] **Paso 2: Ejecutar el test y verlo fallar**
 
 Ejecuta: `pnpm test core/rates.test.ts`
 Esperado: FALLA por no resolverse `./rates` ni `./decimal`.
 
-- [ ] **Paso 3: Crear `core/decimal.ts`**
+- [x] **Paso 3: Crear `core/decimal.ts`**
 
 ```ts
 import Decimal from 'decimal.js'
@@ -421,7 +427,7 @@ Decimal.set({ precision: 28 })
 export default Decimal
 ```
 
-- [ ] **Paso 4: Crear `core/rates.ts`**
+- [x] **Paso 4: Crear `core/rates.ts`**
 
 ```ts
 import Decimal from './decimal'
@@ -448,12 +454,12 @@ export function monthlyRate(annualRate: number): Decimal {
 }
 ```
 
-- [ ] **Paso 5: Ejecutar el test y verlo pasar**
+- [x] **Paso 5: Ejecutar el test y verlo pasar**
 
 Ejecuta: `pnpm test core/rates.test.ts`
 Esperado: 6 tests en verde. El primero es el invariante que cita la sección 11 del spec.
 
-- [ ] **Paso 6: Commit**
+- [x] **Paso 6: Commit**
 
 ```bash
 git add core/decimal.ts core/rates.ts core/rates.test.ts
@@ -466,7 +472,11 @@ compuestos doce veces dan 1.090,00 € exactos."
 
 ---
 
-## Tarea 4: Aritmética de meses y expansión de aportaciones
+## Tarea 4: Aritmética de meses y expansión de aportaciones — COMPLETADA
+
+Commits `0115cfd` y `894ae4d`. La auditoría encontró dos defectos que se corrigieron en el segundo:
+dos reglas con el mismo `fromMonth` hacían que el importe dependiera del orden del array, y
+`addMonths` aceptaba un `count` fraccional devolviendo `2026-2.5`. Ambos lanzan ahora.
 
 **Ficheros:**
 - Crear: `core/months.ts`
@@ -481,7 +491,7 @@ compuestos doce veces dan 1.090,00 € exactos."
   - `function monthRange(from: Month, to: Month): Month[]`
   - `function expandContributions(rules: ContributionRule[], overrides: ContributionOverride[], from: Month, to: Month): Contribution[]`
 
-- [ ] **Paso 1: Escribir el test de meses**
+- [x] **Paso 1: Escribir el test de meses**
 
 Crear `core/months.test.ts`:
 
@@ -531,12 +541,12 @@ describe('monthRange', () => {
 })
 ```
 
-- [ ] **Paso 2: Ejecutar y verlo fallar**
+- [x] **Paso 2: Ejecutar y verlo fallar**
 
 Ejecuta: `pnpm test core/months.test.ts`
 Esperado: FALLA por no resolverse `./months`.
 
-- [ ] **Paso 3: Crear `core/months.ts`**
+- [x] **Paso 3: Crear `core/months.ts`**
 
 ```ts
 import type { Month } from './types'
@@ -580,12 +590,12 @@ export function monthRange(from: Month, to: Month): Month[] {
 }
 ```
 
-- [ ] **Paso 4: Ejecutar y verlo pasar**
+- [x] **Paso 4: Ejecutar y verlo pasar**
 
 Ejecuta: `pnpm test core/months.test.ts`
 Esperado: 9 tests en verde.
 
-- [ ] **Paso 5: Escribir el test de aportaciones**
+- [x] **Paso 5: Escribir el test de aportaciones**
 
 Crear `core/contributions.test.ts`:
 
@@ -718,12 +728,12 @@ describe('expandContributions', () => {
 })
 ```
 
-- [ ] **Paso 6: Ejecutar y verlo fallar**
+- [x] **Paso 6: Ejecutar y verlo fallar**
 
 Ejecuta: `pnpm test core/contributions.test.ts`
 Esperado: FALLA por no resolverse `./contributions`.
 
-- [ ] **Paso 7: Crear `core/contributions.ts`**
+- [x] **Paso 7: Crear `core/contributions.ts`**
 
 ```ts
 import { monthRange } from './months'
@@ -780,12 +790,12 @@ export function expandContributions(
 }
 ```
 
-- [ ] **Paso 8: Ejecutar y verlo pasar**
+- [x] **Paso 8: Ejecutar y verlo pasar**
 
 Ejecuta: `pnpm test core/contributions.test.ts`
 Esperado: 12 tests en verde.
 
-- [ ] **Paso 9: Commit**
+- [x] **Paso 9: Commit**
 
 ```bash
 git add core/months.ts core/months.test.ts core/contributions.ts core/contributions.test.ts

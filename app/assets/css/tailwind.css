@@ -6,15 +6,15 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Tema base de shadcn-vue.
+ * shadcn-vue base theme.
  *
- * El CLI (`shadcn-vue init`) no genera estas variables en la versión 2.8.1: deja
- * la hoja referenciando `bg-background` y `border-border` sin declararlas, y el
- * build de Tailwind 4 falla con "Cannot apply unknown utility class". Están
- * escritas a mano.
+ * The CLI (`shadcn-vue init`) does not generate these variables in version 2.8.1:
+ * it leaves the sheet referencing `bg-background` and `border-border` without
+ * declaring them, and the Tailwind 4 build fails with "Cannot apply unknown
+ * utility class". They are written by hand.
  *
- * Neutros en OKLCH con una desviación fría (tono 258, croma bajo): gris azulado,
- * que descansa la vista en pantallas densas en cifras.
+ * Neutrals in OKLCH with a cool shift (hue 258, low chroma): a blue-grey that
+ * rests the eye on screens dense with figures.
  */
 
 :root {
@@ -48,8 +48,8 @@
   --input: oklch(0.925 0.006 258);
   --ring: oklch(0.7 0.014 258);
 
-  /* Paleta de series para los gráficos. Se revisará al construir
-     <EvolutionChart> en el plan 3, cuando se sepa cuántas series conviven. */
+  /* Series palette for the charts. To be revisited when building
+     <EvolutionChart> in plan 3, once we know how many series coexist. */
   --chart-1: oklch(0.55 0.16 255);
   --chart-2: oklch(0.65 0.14 185);
   --chart-3: oklch(0.72 0.15 85);
