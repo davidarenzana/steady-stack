@@ -44,3 +44,12 @@ export interface Contribution {
   timing: Timing
   weights: Weight[]
 }
+
+/**
+ * A fund's net asset value on a given date. `value` is a decimal string in the
+ * fund's currency, never a floating point number.
+ */
+export interface NavPoint {
+  date: IsoDate
+  value: string
+}
