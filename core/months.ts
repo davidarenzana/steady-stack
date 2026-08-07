@@ -16,6 +16,10 @@ function format(year: number, monthIndex: number): Month {
 
 /** Desplaza un mes `count` posiciones. Acepta valores negativos. */
 export function addMonths(month: Month, count: number): Month {
+  if (!Number.isInteger(count)) {
+    throw new Error(`El desplazamiento de meses debe ser un entero, recibido ${count}`)
+  }
+
   const { year, monthIndex } = parse(month)
   const absolute = year * 12 + monthIndex + count
   return format(Math.floor(absolute / 12), ((absolute % 12) + 12) % 12)

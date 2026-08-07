@@ -22,6 +22,20 @@ describe('addMonths', () => {
     expect(() => addMonths('2026-8', 1)).toThrow('Mes inválido')
     expect(() => addMonths('2026-13', 1)).toThrow('Mes inválido')
   })
+
+  it('rechaza un desplazamiento fraccional', () => {
+    expect(() => addMonths('2026-01', 1.5)).toThrow(
+      'El desplazamiento de meses debe ser un entero, recibido 1.5',
+    )
+  })
+
+  it('acepta un desplazamiento entero negativo', () => {
+    expect(addMonths('2026-01', -1)).toBe('2025-12')
+  })
+
+  it('acepta un desplazamiento de cero', () => {
+    expect(addMonths('2026-01', 0)).toBe('2026-01')
+  })
 })
 
 describe('monthRange', () => {

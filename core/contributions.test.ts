@@ -123,4 +123,49 @@ describe('expandContributions', () => {
   it('devuelve una lista vacía si no hay reglas', () => {
     expect(expandContributions([], [], '2026-08', '2026-11')).toEqual([])
   })
+
+  it('rechaza dos reglas con el mismo mes de inicio', () => {
+    const duplicate: ContributionRule = { ...MONTHLY, amount: 10_000 }
+
+    expect(() => expandContributions([MONTHLY, duplicate], [], '2026-08', '2026-11')).toThrow(
+      'Hay dos reglas de aportación con el mismo mes de inicio: "2026-08"',
+    )
+  })
+
+  it('rechaza el duplicado en ambos órdenes del array', () => {
+    const duplicate: ContributionRule = { ...MONTHLY, amount: 10_000 }
+
+    expect(() => expandContributions([MONTHLY, duplicate], [], '2026-08', '2026-11')).toThrow(
+      'Hay dos reglas de aportación con el mismo mes de inicio: "2026-08"',
+    )
+    expect(() => expandContributions([duplicate, MONTHLY], [], '2026-08', '2026-11')).toThrow(
+      'Hay dos reglas de aportación con el mismo mes de inicio: "2026-08"',
+    )
+  })
+
+  it('no lanza cuando los meses de inicio son distintos', () => {
+    const raise: ContributionRule = { ...MONTHLY, fromMonth: '2027-01', amount: 40_000 }
+
+    expect(() => expandContributions([MONTHLY, raise], [], '2026-08', '2027-02')).not.toThrow()
+  })
+
+  it('una excepción de importe cero aparece en la serie, no se salta', () => {
+    const zero: ContributionOverride = { month: '2026-10', amount: 0, note: 'importe cero' }
+    const result = expandContributions([MONTHLY], [zero], '2026-08', '2026-11')
+
+    expect(result.map((c) => c.month)).toEqual(['2026-08', '2026-09', '2026-10', '2026-11'])
+    expect(result.find((c) => c.month === '2026-10')?.amount).toBe(0)
+  })
+
+  it('una regla, un mes saltado y un extra producen la serie correcta (sección 11 del spec)', () => {
+    const skip: ContributionOverride = { month: '2026-09', amount: null, note: 'mes sin liquidez' }
+    const extra: ContributionOverride = { month: '2026-10', amount: 150_000, note: 'paga extra' }
+    const result = expandContributions([MONTHLY], [skip, extra], '2026-08', '2026-11')
+
+    expect(result.map((c) => [c.month, c.amount])).toEqual([
+      ['2026-08', 20_000],
+      ['2026-10', 150_000],
+      ['2026-11', 20_000],
+    ])
+  })
 })

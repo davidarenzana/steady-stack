@@ -30,6 +30,16 @@ export function expandContributions(
   from: Month,
   to: Month,
 ): Contribution[] {
+  const seenFromMonths = new Set<Month>()
+  for (const rule of rules) {
+    if (seenFromMonths.has(rule.fromMonth)) {
+      throw new Error(
+        `Hay dos reglas de aportación con el mismo mes de inicio: "${rule.fromMonth}"`,
+      )
+    }
+    seenFromMonths.add(rule.fromMonth)
+  }
+
   const overrideByMonth = new Map(overrides.map((o) => [o.month, o]))
   const contributions: Contribution[] = []
 

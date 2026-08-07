@@ -44,4 +44,13 @@ describe('monthlyRate', () => {
   it('rechaza una tasa que destruiría más del capital', () => {
     expect(() => monthlyRate(-1.5)).toThrow('La tasa anual no puede ser inferior a -100 %')
   })
+
+  it('acepta la frontera exacta del -100 % y aniquila el capital', () => {
+    const rate = monthlyRate(-1)
+    const afterTwelveMonths = new Decimal(1_000).times(rate.plus(1).pow(12))
+
+    expect(() => monthlyRate(-1)).not.toThrow()
+    expect(rate.toNumber()).toBe(-1)
+    expect(afterTwelveMonths.toFixed(2)).toBe('0.00')
+  })
 })
