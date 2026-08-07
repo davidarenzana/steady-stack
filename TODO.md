@@ -28,10 +28,10 @@ the command is:
 
 ## Housekeeping
 
-**Plan checkboxes for tasks 3 and 4 are unticked**, though both are implemented and committed
-(`core/rates.ts`, `core/months.ts`, `core/contributions.ts`, plus the audit fixes in `894ae4d`).
-Tasks 1 and 2 are marked `COMPLETADA`. Anyone reading the plan would conclude the rate conversion
-and the month arithmetic are still missing.
+**The six commits on this branch are not on `main`.** They sit on
+`worktree-agente-committer`, pushed to origin but unmerged. Starting task 5 from `main` would mean
+working without the `committer` agent, the English codebase and the README. Merge or open a PR
+first.
 
 **The local directory is still `~/Sites/my-stonks`.** The repository, the package and the interface
 are all Steady Stack now; only the path on disk lags. It is a `mv` with no sessions open, so it
