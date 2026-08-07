@@ -18,6 +18,10 @@ data/*.db-wal
 .env.*
 !.env.example
 
+# Claude Code worktrees. The branches live in the repository; the checkouts do
+# not, and each one drags its own node_modules along.
+.claude/worktrees/
+
 # System and editors
 .DS_Store
 *.log
