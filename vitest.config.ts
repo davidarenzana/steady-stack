@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -9,6 +10,19 @@ export default defineConfig({
         test: {
           name: 'core',
           include: ['core/**/*.test.ts'],
+          environment: 'node',
+        },
+      },
+      {
+        // The persistence layer and the price providers. Node, because they talk
+        // to better-sqlite3 and to the file system. `~~/` is mapped by hand: Nitro
+        // and tsx resolve it on their own, Vitest does not.
+        resolve: {
+          alias: { '~~': fileURLToPath(new URL('.', import.meta.url)) },
+        },
+        test: {
+          name: 'server',
+          include: ['server/**/*.test.ts', 'scripts/**/*.test.ts'],
           environment: 'node',
         },
       },
