@@ -16,12 +16,13 @@ compounds across 300 months of projection.
 
 Verify by **running**, not by reading:
 
-- `(1+0.09)^(1/12)` applied twelve times to €1,000 gives **exactly €1,090.00**. If €1,093.81 shows
-  up, someone slipped in `r/12`.
-- €200 split 80/20 gives €160 and €40, and **adds up to €200**. Look for cents that evaporate or
-  get duplicated in the rounding.
+- `(1+0,09)^(1/12)` applied twelve times to 1.000 € gives **exactly 1.090,00 €**. If 1.093,81 €
+  shows up, someone slipped in `r/12`.
+- 200 € split 80/20 gives 160 € and 40 €, and **adds up to 200 €**. Look for cents that evaporate
+  or get duplicated in the rounding.
 - No monetary amount travels in a JavaScript `number`. Look for `parseFloat`, `Number()`,
   arithmetic with `+` over euros.
+- Figures in prose use Spanish typography (`1.090,00 €`, `9 %`), not English (`€1,090.00`, `9%`).
 - Units = amount / NAV, with the decimal places the spec calls for.
 - Syncing twice in a row does not duplicate rows in `nav`.
 - Editing a contribution rule does not alter purchases already materialised.

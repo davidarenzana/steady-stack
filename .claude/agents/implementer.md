@@ -28,7 +28,7 @@ projection.
 - Amounts in **integer cents**. NAV and units as decimal strings with `decimal.js`. Never a
   JavaScript `number` for money.
 - Monthly rate = `(1+r)^(1/12)-1`. Never `r/12`.
-- A split must add up to the exact total: €200 at 80/20 is €160 and €40, with no cents
+- A split must add up to the exact total: 200 € at 80/20 is 160 € and 40 €, with no cents
   evaporating. Assign the rounding remainder explicitly to one of the parts.
 - `core/` is pure functions: it imports neither Nuxt nor Drizzle, and it does no network and no
   file access.
@@ -42,8 +42,11 @@ and the messages inside `throw new Error(...)`. Error messages are developer-fac
 The plan you are working from may be written in Spanish. Translate as you go — the code that comes
 out is in English regardless of the language the task was described in.
 
-The one exception is text the end user reads in the app's interface: that is in Spanish, with
-Spanish number formatting (`1.090,00 €`, `9 %`).
+The one exception is text the end user reads in the app's interface: that is in Spanish.
+
+Numbers and currency always use Spanish typography, in interface text and in English prose alike:
+`1.090,00 €`, `9 %` — never `€1,090.00` or `9%`. Values quoted straight from the code keep the form
+they have there, so a test asserting `'0.007207'` is documented as `0.007207`.
 
 ## Limits
 

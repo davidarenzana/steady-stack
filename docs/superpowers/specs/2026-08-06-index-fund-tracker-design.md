@@ -79,7 +79,7 @@ scenario                id, name, annual_rate, color
 
 ### Contributions: a rule plus exceptions
 
-The recurring contribution is defined once (`€200/month, 80/20, from Aug 2026`) and the
+The recurring contribution is defined once (`200 €/month, 80/20, from Aug 2026`) and the
 application generates the months. A `contribution_override` covers whatever departs from the norm:
 a skipped month (`amount = null`), an extra contribution, or a different amount.
 
@@ -89,7 +89,7 @@ previous one keeps governing the earlier months.
 ### Purchases: materialisation
 
 Contributions are **derived** — they are computed, not stored. An executed purchase is a
-**historical fact**: 107.8641 units were bought at €14.8321, and that does not change even if the
+**historical fact**: 107,8641 units were bought at 14,8321 €, and that does not change even if the
 rule is edited tomorrow.
 
 Hence a materialisation step: when the month arrives and the net asset value is available, the
@@ -120,12 +120,12 @@ core/
 
 The monthly rate is derived from the annual one with **`(1 + r)^(1/12) - 1`**, not with `r / 12`.
 
-The `r / 12` shortcut does not produce the stated annual return. At a nominal 9%, `0.75%` monthly
-compounded twelve times gives `€1,093.81` on `€1,000`, that is a real 9.381%. The correct rate is
-`0.7207%`, which gives exactly `€1,090.00`. It is the distinction between a nominal rate and an APR.
+The `r / 12` shortcut does not produce the stated annual return. At a nominal 9 %, `0,75 %` monthly
+compounded twelve times gives `1.093,81 €` on `1.000 €`, that is a real 9,381 %. The correct rate is
+`0,7207 %`, which gives exactly `1.090,00 €`. It is the distinction between a nominal rate and an APR.
 
 The error is systematic and compounds across the whole horizon. Over this portfolio's real plan, at
-25 years and 9%, the shortcut overstates the result by **€14,415** (+6.26%).
+25 years and 9 %, the shortcut overstates the result by **14.415 €** (+6,26 %).
 
 The reference spreadsheet uses `r / 12`. It is dropped deliberately: the user asked for the
 calculations to be improved where appropriate.
@@ -159,7 +159,7 @@ series in euros for both funds:
 | Vanguard Emerging Markets | `IE0031786696` | `0P00012I6A.F` | 507 daily NAVs in EUR |
 
 **Share classes.** The same ISIN returns several symbols with different prices (`0P0001CLDK.F` at
-€9.99 against `IE00BYX5NX33.SG` at €14.33). Adding a fund shows the candidates with their current
+9,99 € against `IE00BYX5NX33.SG` at 14,33 €). Adding a fund shows the candidates with their current
 price so the user picks the one matching their statement. It is not guessed.
 
 **Accepted risk.** The Yahoo API is not official and may break without notice. Mitigation: the
@@ -187,7 +187,7 @@ No floating point for money.
 | Net asset values | Decimal string, arithmetic with `decimal.js` |
 | Units | Decimal string, six or more decimal places |
 
-It prevents €200 split 80/20 from ending up as €159.99999, and maps cleanly to Postgres `NUMERIC`.
+It prevents 200 € split 80/20 from ending up as 159,99999 €, and maps cleanly to Postgres `NUMERIC`.
 
 ## 8. Screens
 
@@ -223,11 +223,11 @@ calling functions without standing anything up.
 
 Where the real risk is: a misrounded cent compounds across 300 months of projection.
 
-- **Compounding**: `(1+0.09)^(1/12)-1` applied twelve times to €1,000 gives exactly €1,090.00
+- **Compounding**: `(1+0,09)^(1/12)-1` applied twelve times to 1.000 € gives exactly 1.090,00 €
 - **Contribution expansion**: a rule plus a skipped month plus an extra produces the right series
 - **Rule change**: raising the contribution does not alter the earlier months
 - **Units**: amount divided by NAV, with the expected rounding
-- **Split**: €200 at 80/20 gives €160 and €40, and adds up to exactly €200
+- **Split**: 200 € at 80/20 gives 160 € and 40 €, and adds up to exactly 200 €
 - **Contribution timing**: `start` earns in the arrival month, `end` does not
 - **XIRR**: against a known cash-flow case
 
@@ -252,8 +252,8 @@ Integration against a temporary SQLite file.
 Components with `@vue/test-utils` over `happy-dom`. No browser: it checks that, given a state, the
 component renders the right thing.
 
-- **Formatting**: €2,200 paid in and a value of €2,431.50 are displayed as `+231,50 €` and
-  `+10,52 %` — Spanish formatting, because the interface is in Spanish (see section 12)
+- **Formatting**: 2.200 € paid in and a value of 2.431,50 € are displayed as `+231,50 €` and
+  `+10,52 %`
 - **Chart series**: `<EvolutionChart>` receives the real portfolio and the active scenarios
 - **Empty state**: with no contributions recorded it renders neither a blank chart nor a NaN
 - **Valuation date**: it shows which day the latest available NAV corresponds to
@@ -286,8 +286,8 @@ Agents defined in `.claude/agents/`:
 The main agent decides what goes into each commit and leaves it in the index; the `committer` only
 writes the text. The split is that way because the **why** of a change cannot be derived from the
 diff: whoever asked for it knows, and passes it along. What can be delegated is applying the
-history's style — English, no conventional prefixes, body at 80 columns — which is mechanical work
-and does not deserve the main model's context.
+history's style — English, no conventional prefixes, body at 80 columns, Spanish number typography —
+which is mechanical work and does not deserve the main model's context.
 
 Messages carry no co-authorship line.
 
@@ -296,9 +296,19 @@ Messages carry no co-authorship line.
 Everything written in this repository is in **English**: code, comments, JSDoc, test names, the
 messages inside `throw new Error(...)`, specs, plans and commit messages.
 
-The one exception is text the end user reads in the application's interface, which is in **Spanish**
-with Spanish number formatting (`1.090,00 €`, `9 %`). The rule divides by audience, not by file:
-English for whoever reads the code, Spanish for whoever uses the app.
+The one exception is text the end user reads in the application's interface, which is in **Spanish**.
+The rule divides by audience, not by file: English for whoever reads the code, Spanish for whoever
+uses the app.
+
+**Numbers and currency always use Spanish typography**, in interface text and in English prose
+alike: comma as the decimal separator, point as the thousands separator, the currency symbol after
+the figure with a space, and a space before `%`. So `1.090,00 €`, `14.415 €` and `9 %`, never
+`€1,090.00` or `9%`. The reason is that the figures are the domain — a portfolio in euros read by a
+Spanish speaker — and they should look the same in a comment, in a spec and on screen.
+
+Values quoted straight from the code are the exception to the exception: they keep the form they
+have there, so a test asserting `'0.007207'` is documented as `0.007207`. Otherwise a comment would
+contradict the line below it.
 
 Two things predate this rule and stay in Spanish: the plan
 `docs/superpowers/plans/2026-08-06-motor-de-calculo.md`, which gets consumed and discarded, and the
@@ -310,18 +320,18 @@ commits up to `894ae4d`. The history is not rewritten.
 Portfolio: index, EUR
 
 Funds
-  80%   Fidelity MSCI World Index Fund EUR P Acc              IE00BYX5NX33
-  20%   Vanguard Emerging Markets Stock Index Fund Inv EUR Acc IE0031786696
+  80 %   Fidelity MSCI World Index Fund EUR P Acc              IE00BYX5NX33
+  20 %   Vanguard Emerging Markets Stock Index Fund Inv EUR Acc IE0031786696
 
 Contributions
-  Jul 2026   €2,000   initial, 80/20  ->  €1,600 / €400
-  Aug 2026     €200   recurring monthly rule, 80/20  ->  €160 / €40
+  Jul 2026   2.000 €   initial, 80/20  ->  1.600 € / 400 €
+  Aug 2026     200 €   recurring monthly rule, 80/20  ->  160 € / 40 €
              + one-off extras as they come up
 
 Scenarios
-  No interest    0%
-  Scenario 1     5%
-  Scenario 2     9%
+  No interest    0 %
+  Scenario 1     5 %
+  Scenario 2     9 %
   Horizon        25 years (configurable)
 ```
 

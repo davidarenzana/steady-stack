@@ -45,7 +45,10 @@ app compounds over years of projection. The interface goes last.
 
 Write the plan in **English**, like everything else in this repository: code, comments, tests,
 specs and commit messages. The one exception is text the end user reads in the app's interface,
-which is in Spanish — so plan the interface with Spanish labels and Spanish number formatting.
+which is in Spanish — so plan the interface with Spanish labels.
+
+Numbers and currency always use Spanish typography, in interface text and in English prose alike:
+`1.090,00 €`, `9 %` — never `€1,090.00` or `9%`.
 
 The earlier plan `docs/superpowers/plans/2026-08-06-motor-de-calculo.md` is in Spanish and stays
 that way. When a task from it gets implemented, the code that comes out is in English anyway.

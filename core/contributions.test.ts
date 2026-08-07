@@ -7,7 +7,7 @@ const WEIGHTS = [
   { fundId: 'emerging', weight: 0.2 },
 ]
 
-/** The portfolio's real rule: €200/month from August 2026. */
+/** The portfolio's real rule: 200 €/month from August 2026. */
 const MONTHLY: ContributionRule = {
   fromMonth: '2026-08',
   amount: 20_000,
@@ -102,7 +102,7 @@ describe('expandContributions', () => {
   })
 
   it("reproduces the portfolio's real start", () => {
-    // €2,000 up front in July, plus the €200/month rule from August.
+    // 2.000 € up front in July, plus the 200 €/month rule from August.
     const initial: ContributionRule = {
       fromMonth: '2026-07',
       amount: 200_000,

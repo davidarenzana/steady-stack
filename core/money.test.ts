@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { split } from './money'
 
 describe('split', () => {
-  it('splits €200 at 80/20 into €160 and €40', () => {
+  it('splits 200 € at 80/20 into 160 € and 40 €', () => {
     const result = split(20_000, [
       { fundId: 'world', weight: 0.8 },
       { fundId: 'emerging', weight: 0.2 },
@@ -11,7 +11,7 @@ describe('split', () => {
     expect(result).toEqual({ world: 16_000, emerging: 4_000 })
   })
 
-  it('splits the initial €2,000 at 80/20', () => {
+  it('splits the initial 2.000 € at 80/20', () => {
     const result = split(200_000, [
       { fundId: 'world', weight: 0.8 },
       { fundId: 'emerging', weight: 0.2 },
@@ -34,7 +34,7 @@ describe('split', () => {
   })
 
   it('gives the leftover cent to the weight with the largest remainder', () => {
-    // 1,001 cents at 50/50: 500.5 each. On a tie, the first one wins.
+    // 1.001 cents at 50/50: 500,5 each. On a tie, the first one wins.
     const result = split(1_001, [
       { fundId: 'a', weight: 0.5 },
       { fundId: 'b', weight: 0.5 },
