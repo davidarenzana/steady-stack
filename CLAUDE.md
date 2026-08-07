@@ -128,8 +128,21 @@ hand-wrapped at 80 columns saying *why*, with the numbers when numbers justify i
 
 ## Current state
 
-The calculation engine is complete and was built before any database or interface exists. Tasks 1–8
-of the plan are done: domain types, exact splitting, rate conversion, month arithmetic, contribution
-expansion, scenario projection, unit purchases, valuation and XIRR. 76 tests passing. Nothing talks
-to a database or to the network yet — that is plan 2, still unwritten. `TODO.md` holds the open
-threads.
+The calculation engine is complete: tasks 1–8 of
+[plan 1](docs/superpowers/plans/2026-08-06-motor-de-calculo.md) — domain types, exact splitting,
+rate conversion, month arithmetic, contribution expansion, scenario projection, unit purchases,
+valuation and XIRR.
+
+[Plan 2](docs/superpowers/plans/2026-08-07-persistencia-y-red.md), persistence and the network, is
+written: 18 tasks over 5 phases. **Phase 1 of 5 is done** — `core/dates.ts`, the Drizzle schema for
+the seven tables, the SQLite client, a temp-database helper, the row↔domain mappers and typed
+queries, and the seeded initial data of section 13 of the spec. 140 tests passing across three
+Vitest projects.
+
+Nothing talks to the network yet: the `PriceProvider` interface and the Yahoo implementation are
+phase 2, the sync and materialisation phase 3, the read model phase 4 and the Nitro routes phase 5.
+No Vue page exists — the interface is plan 3, still unwritten. `TODO.md` holds the open threads.
+
+Three commands exist for the database: `pnpm db:generate`, `pnpm db:migrate` and `pnpm db:seed`.
+The seed is idempotent. `pnpm test --project server` runs the integration tests alone; they use a
+temporary SQLite file under `os.tmpdir()` and never touch `data/steady-stack.db`.

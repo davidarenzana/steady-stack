@@ -15,20 +15,23 @@ different price.
 
 ## Status
 
-The calculation engine is being built first, tested in isolation, before any database or interface
-exists. That is where the risk lives: a misrounded cent compounds across 300 months of projection.
+The calculation engine was built first and tested in isolation, before any database or interface
+existed. That is where the risk lives: a misrounded cent compounds across 300 months of projection.
+The persistence layer is going in underneath it now.
 
 | | |
 |---|---|
 | Contribution splitting by weights | done |
 | Annual → monthly rate conversion | done |
 | Month arithmetic and contribution expansion | done |
-| Scenario projection | pending |
-| Unit purchases, valuation, XIRR | pending |
-| SQLite persistence and NAV download | pending |
+| Scenario projection | done |
+| Unit purchases, valuation, XIRR | done |
+| SQLite schema, mappers and seeded initial data | done |
+| NAV download from Yahoo | pending |
+| Nitro API routes | pending |
 | Interface | pending |
 
-47 tests passing. Nothing here talks to a database or to the network yet.
+140 tests passing. There is a database and it holds the portfolio; nothing talks to the network yet.
 
 ## Getting started
 
@@ -45,6 +48,15 @@ pnpm test:watch     # watch mode
 pnpm typecheck      # vue-tsc over the whole project
 pnpm build          # production build
 ```
+
+```sh
+pnpm db:generate    # generate a migration from the Drizzle schema
+pnpm db:migrate     # apply pending migrations
+pnpm db:seed        # write the initial portfolio; idempotent, run it as often as you like
+```
+
+The database is a single file, `data/steady-stack.db`, and it is git-ignored. `pnpm db:seed` creates
+it and fills in the portfolio, its two funds, the contribution rules and the scenarios.
 
 ## Project structure
 
@@ -79,7 +91,9 @@ overstates the result by 14.415 €. The correct rate is 0,7207 %, which turns 1
 - [`docs/superpowers/specs/2026-08-06-index-fund-tracker-design.md`](docs/superpowers/specs/2026-08-06-index-fund-tracker-design.md)
   — the design spec, and the source of truth
 - [`docs/superpowers/plans/2026-08-06-motor-de-calculo.md`](docs/superpowers/plans/2026-08-06-motor-de-calculo.md)
-  — the implementation plan for the calculation engine
+  — the implementation plan for the calculation engine, complete
+- [`docs/superpowers/plans/2026-08-07-persistencia-y-red.md`](docs/superpowers/plans/2026-08-07-persistencia-y-red.md)
+  — the implementation plan for persistence and the network, phase 1 of 5 complete
 
 ## Conventions
 
