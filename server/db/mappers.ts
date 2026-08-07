@@ -98,6 +98,14 @@ function assertPurchaseSource(value: unknown, field: string): 'auto' | 'manual' 
   throw new Error(`Column "${field}" must be "auto" or "manual", found ${JSON.stringify(value)}`)
 }
 
+/** Checks that `value` is one of the declared NAV sources. */
+function assertNavSource(value: unknown, field: string): 'yahoo' | 'manual' {
+  if (value === 'yahoo' || value === 'manual') {
+    return value
+  }
+  throw new Error(`Column "${field}" must be "yahoo" or "manual", found ${JSON.stringify(value)}`)
+}
+
 /** Maps a `contribution_rule` row onto the core `ContributionRule`, dropping `id` and `portfolioId`. */
 export function toContributionRule(row: ContributionRuleRow): ContributionRule {
   return {
@@ -147,7 +155,15 @@ export function toPurchase(row: PurchaseRow): StoredPurchase {
   }
 }
 
-/** Maps a `nav` row onto the core `NavPoint`. The value stays a decimal string, never a number. */
+/**
+ * Maps a `nav` row onto the core `NavPoint`. The value stays a decimal string,
+ * never a number. `core/types.ts` has no `source` field on `NavPoint`, so it is
+ * dropped from the *output* — but only after `assertNavSource` has inspected
+ * it: a row outside `['yahoo', 'manual']` was written by something that
+ * should not have written it, and the schema carries no `CHECK` constraint to
+ * catch that on its own.
+ */
 export function toNavPoint(row: NavRow): NavPoint {
+  assertNavSource(row.source, 'source')
   return { date: row.date, value: row.value }
 }

@@ -169,6 +169,19 @@ describe('toNavPoint', () => {
     const row: NavRow = { id: 1, fundId: 'world', date: '2026-08-03', value: '14.8321', source: 'yahoo' }
     expect(toNavPoint(row)).toEqual({ date: '2026-08-03', value: '14.8321' })
   })
+
+  it('rejects a source outside the enum, since the schema has no CHECK constraint', () => {
+    const row = {
+      id: 1,
+      fundId: 'world',
+      date: '2026-08-03',
+      value: '14.8321',
+      source: 'corrupted',
+    } as unknown as NavRow
+
+    expect(() => toNavPoint(row))
+      .toThrow('Column "source" must be "yahoo" or "manual", found "corrupted"')
+  })
 })
 
 describe('assertCents', () => {
