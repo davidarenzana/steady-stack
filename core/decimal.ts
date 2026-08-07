@@ -1,10 +1,10 @@
 import Decimal from 'decimal.js'
 
 /**
- * Punto único de configuración de la precisión decimal del proyecto.
+ * The single place where the project's decimal precision is configured.
  *
- * 28 dígitos significativos: sobra para 300 meses de capitalización compuesta
- * sin que el error de redondeo llegue nunca al céntimo.
+ * 28 significant digits: more than enough for 300 months of compounding without
+ * the rounding error ever reaching a cent.
  */
 Decimal.set({ precision: 28 })
 

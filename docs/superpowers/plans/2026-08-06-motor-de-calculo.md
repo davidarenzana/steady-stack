@@ -14,7 +14,7 @@ responsabilidad y su fichero de test al lado.
 
 **Stack:** Node 22.14 · pnpm 11.8 · Nuxt 4.5 · TypeScript · decimal.js · Vitest
 
-**Spec de referencia:** `docs/superpowers/specs/2026-08-06-tracker-inversiones-design.md`
+**Spec de referencia:** `docs/superpowers/specs/2026-08-06-index-fund-tracker-design.md`
 
 ## Restricciones globales
 
@@ -114,7 +114,7 @@ Iconos: **`@lucide/vue`**, no `lucide-vue-next`, que está deprecado.
 - Produce:
   - `type Cents = number` (siempre entero)
   - `type Month = string` (`'YYYY-MM'`)
-  - `type Timing = 'inicio' | 'fin'`
+  - `type Timing = 'start' | 'end'`
   - `interface Weight { fundId: string; weight: number }`
   - `interface ContributionRule { fromMonth: Month; amount: Cents; timing: Timing; weights: Weight[] }`
   - `interface ContributionOverride { month: Month; amount: Cents | null; timing?: Timing; note?: string }`
@@ -224,7 +224,7 @@ export type IsoDate = string
  * Momento de la aportación dentro del mes. Determina si devenga rendimiento
  * en su mes de llegada dentro de las proyecciones teóricas.
  */
-export type Timing = 'inicio' | 'fin'
+export type Timing = 'start' | 'end'
 
 export interface Weight {
   fundId: string
@@ -603,7 +603,7 @@ const WEIGHTS = [
 const MONTHLY: ContributionRule = {
   fromMonth: '2026-08',
   amount: 20_000,
-  timing: 'inicio',
+  timing: 'start',
   weights: WEIGHTS,
 }
 
@@ -613,7 +613,7 @@ describe('expandContributions', () => {
 
     expect(result.map((c) => c.month)).toEqual(['2026-08', '2026-09', '2026-10', '2026-11'])
     expect(result.every((c) => c.amount === 20_000)).toBe(true)
-    expect(result.every((c) => c.timing === 'inicio')).toBe(true)
+    expect(result.every((c) => c.timing === 'start')).toBe(true)
   })
 
   it('ignora los meses anteriores al inicio de la regla', () => {
@@ -672,11 +672,11 @@ describe('expandContributions', () => {
   })
 
   it('una excepción puede cambiar el momento de la aportación', () => {
-    const late: ContributionOverride = { month: '2026-10', amount: 20_000, timing: 'fin' }
+    const late: ContributionOverride = { month: '2026-10', amount: 20_000, timing: 'end' }
     const result = expandContributions([MONTHLY], [late], '2026-08', '2026-11')
 
-    expect(result.find((c) => c.month === '2026-10')?.timing).toBe('fin')
-    expect(result.find((c) => c.month === '2026-09')?.timing).toBe('inicio')
+    expect(result.find((c) => c.month === '2026-10')?.timing).toBe('end')
+    expect(result.find((c) => c.month === '2026-09')?.timing).toBe('start')
   })
 
   it('una excepción hereda los pesos de la regla vigente', () => {
@@ -698,7 +698,7 @@ describe('expandContributions', () => {
     const initial: ContributionRule = {
       fromMonth: '2026-07',
       amount: 200_000,
-      timing: 'inicio',
+      timing: 'start',
       weights: WEIGHTS,
     }
     // Desde agosto, MONTHLY es la regla más reciente y sustituye a la inicial
@@ -828,7 +828,7 @@ import type { Contribution } from './types'
 
 const NO_WEIGHTS: Contribution['weights'] = []
 
-function contribution(month: string, amount: number, timing: 'inicio' | 'fin' = 'inicio'): Contribution {
+function contribution(month: string, amount: number, timing: 'start' | 'end' = 'start'): Contribution {
   return { month, amount, timing, weights: NO_WEIGHTS }
 }
 
@@ -843,8 +843,8 @@ describe('projectScenario', () => {
 
   it('una aportación de fin de mes no devenga en su mes de llegada', () => {
     const months = monthRange('2026-01', '2026-12')
-    const atStart = projectScenario([contribution('2026-01', 100_000, 'inicio')], 0.09, months)
-    const atEnd = projectScenario([contribution('2026-01', 100_000, 'fin')], 0.09, months)
+    const atStart = projectScenario([contribution('2026-01', 100_000, 'start')], 0.09, months)
+    const atEnd = projectScenario([contribution('2026-01', 100_000, 'end')], 0.09, months)
 
     // La de inicio capitaliza doce meses; la de fin, once.
     expect(atStart[11]!.balance).toBe(109_000)
@@ -946,7 +946,7 @@ export function projectScenario(
   const startOfMonth = new Map<Month, Cents>()
   const endOfMonth = new Map<Month, Cents>()
   for (const c of contributions) {
-    const bucket = c.timing === 'inicio' ? startOfMonth : endOfMonth
+    const bucket = c.timing === 'start' ? startOfMonth : endOfMonth
     bucket.set(c.month, (bucket.get(c.month) ?? 0) + c.amount)
   }
 
@@ -1017,7 +1017,7 @@ import type { Contribution } from './types'
 const CONTRIBUTION: Contribution = {
   month: '2026-08',
   amount: 20_000,
-  timing: 'inicio',
+  timing: 'start',
   weights: [
     { fundId: 'world', weight: 0.8 },
     { fundId: 'emerging', weight: 0.2 },

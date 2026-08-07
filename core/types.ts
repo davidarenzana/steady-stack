@@ -1,25 +1,25 @@
-/** Importe monetario en céntimos enteros. Nunca euros en coma flotante. */
+/** A monetary amount in integer cents. Never euros in floating point. */
 export type Cents = number
 
-/** Mes en formato `YYYY-MM`. Ordena lexicográficamente igual que cronológicamente. */
+/** A month as `YYYY-MM`. Sorts lexicographically the same as chronologically. */
 export type Month = string
 
-/** Fecha en formato `YYYY-MM-DD`. */
+/** A date as `YYYY-MM-DD`. */
 export type IsoDate = string
 
 /**
- * Momento de la aportación dentro del mes. Determina si devenga rendimiento
- * en su mes de llegada dentro de las proyecciones teóricas.
+ * When within the month the contribution lands. Decides whether it earns a
+ * return in its arrival month in the theoretical projections.
  */
-export type Timing = 'inicio' | 'fin'
+export type Timing = 'start' | 'end'
 
 export interface Weight {
   fundId: string
-  /** Peso en tanto por uno. Los pesos de un reparto deben sumar 1. */
+  /** Weight as a fraction of one. The weights of a split must add up to 1. */
   weight: number
 }
 
-/** Regla de aportación periódica. Rige desde `fromMonth` hasta que otra la sustituya. */
+/** A recurring contribution rule. Governs from `fromMonth` until another supersedes it. */
 export interface ContributionRule {
   fromMonth: Month
   amount: Cents
@@ -27,17 +27,17 @@ export interface ContributionRule {
   weights: Weight[]
 }
 
-/** Excepción puntual a la regla vigente en un mes concreto. */
+/** A one-off exception to the rule in force in a given month. */
 export interface ContributionOverride {
   month: Month
-  /** `null` significa mes saltado: ese mes no hay aportación. */
+  /** `null` means a skipped month: no contribution that month. */
   amount: Cents | null
-  /** Si se omite, hereda el de la regla vigente. */
+  /** If omitted, inherits the one from the rule in force. */
   timing?: Timing
   note?: string
 }
 
-/** Aportación ya resuelta para un mes concreto. */
+/** A contribution already resolved for a given month. */
 export interface Contribution {
   month: Month
   amount: Cents

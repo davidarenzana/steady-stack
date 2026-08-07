@@ -1,21 +1,21 @@
 import Decimal from './decimal'
 
 /**
- * Tasa mensual equivalente a una tasa anual: `(1 + r)^(1/12) - 1`.
+ * The monthly rate equivalent to an annual rate: `(1 + r)^(1/12) - 1`.
  *
- * No es `r / 12`. Un 9 % anual dividido entre doce da un 0,75 % mensual que,
- * compuesto doce veces, produce un 9,381 % real: el atajo regala rentabilidad.
- * La tasa correcta es 0,7207 %. Es la misma distinción que hay entre el TIN y
- * la TAE de un préstamo.
+ * It is not `r / 12`. A 9% annual rate divided by twelve gives a 0.75% monthly
+ * rate which, compounded twelve times, produces a real 9.381%: the shortcut gives
+ * away return. The correct rate is 0.7207%. It is the same distinction as the one
+ * between the nominal rate and the APR on a loan.
  *
- * Sobre el horizonte de esta cartera (25 años al 9 %) el atajo sobreestimaba
- * el resultado en 14.415 €.
+ * Over this portfolio's horizon (25 years at 9%) the shortcut overstated the
+ * result by €14,415.
  *
- * @param annualRate tasa anual en tanto por uno (0.09 para un 9 %)
+ * @param annualRate annual rate as a fraction of one (0.09 for 9%)
  */
 export function monthlyRate(annualRate: number): Decimal {
   if (annualRate < -1) {
-    throw new Error(`La tasa anual no puede ser inferior a -100 %, recibida ${annualRate}`)
+    throw new Error(`Annual rate cannot be below -100%, received ${annualRate}`)
   }
 
   return new Decimal(1).plus(annualRate).pow(new Decimal(1).div(12)).minus(1)
