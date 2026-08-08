@@ -24,7 +24,7 @@ line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 - [x] Task 1.5 — `PATCH /api/funds/:id` can clear `providerSymbol` back to `null`
 - [x] Task 1.6 — NAV routes (9, 10, 11)
 - [x] Task 1.7 — Contribution routes (12, 13, 14, 15, 16, 17)
-- [ ] Task 1.8 — Purchase routes (18, 19, 20, 21, 22)
+- [x] Task 1.8 — Purchase routes (18, 19, 20, 21, 22)
 - [ ] Task 1.9 — Scenario routes (23, 24, 25, 26)
 
 ---
