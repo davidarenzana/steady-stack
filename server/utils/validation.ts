@@ -68,6 +68,23 @@ export function readOptionalString(body: unknown, field: string): string | undef
   return value
 }
 
+/**
+ * Reads an optional string field that can also be cleared. `undefined` when
+ * the field is absent — leave the stored value alone — and `null` when it is
+ * explicitly `null`, which means set the column to `NULL`. The distinction
+ * `readOptionalString` collapses, and the only way a wrong `providerSymbol`
+ * can be undone.
+ */
+export function readClearableString(body: unknown, field: string): string | null | undefined {
+  const value = fieldValue(body, field)
+  if (value === undefined) return undefined
+  if (value === null) return null
+  if (typeof value !== 'string') {
+    throw new ValidationError(`Field "${field}" must be a string, received ${formatReceived(value)}`)
+  }
+  return value
+}
+
 /** Reads a required field that must be an exact integer number of cents. Never `parseFloat`, never a coerced string. */
 export function readCents(body: unknown, field: string): number {
   const value = fieldValue(body, field)

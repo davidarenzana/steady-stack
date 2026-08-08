@@ -21,7 +21,7 @@ line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 - [x] Task 1.2 — The route-test harness and a smoke test
 - [x] Task 1.3 — Portfolio and dashboard routes (1, 2, 3)
 - [x] Task 1.4 — Funds routes (4, 5, 6, 7, 8)
-- [ ] Task 1.5 — `PATCH /api/funds/:id` can clear `providerSymbol` back to `null`
+- [x] Task 1.5 — `PATCH /api/funds/:id` can clear `providerSymbol` back to `null`
 - [ ] Task 1.6 — NAV routes (9, 10, 11)
 - [ ] Task 1.7 — Contribution routes (12, 13, 14, 15, 16, 17)
 - [ ] Task 1.8 — Purchase routes (18, 19, 20, 21, 22)

@@ -4,6 +4,7 @@ import {
   hasField,
   readBoolean,
   readCents,
+  readClearableString,
   readDecimalString,
   readIntegerRouteParam,
   readIsoDate,
@@ -59,6 +60,28 @@ describe('readOptionalString', () => {
 
   it('throws when the field is present but not a string', () => {
     expect(() => readOptionalString({ note: 42 }, 'note')).toThrow('Field "note" must be a string, received 42')
+  })
+})
+
+describe('readClearableString', () => {
+  it('returns the field when it is a string', () => {
+    expect(readClearableString({ providerSymbol: '0P0001CLDK.F' }, 'providerSymbol')).toBe('0P0001CLDK.F')
+  })
+
+  it('returns undefined when the field is missing, meaning leave the stored value alone', () => {
+    expect(readClearableString({}, 'providerSymbol')).toBeUndefined()
+  })
+
+  it('returns null when the field is explicitly null, meaning clear the column', () => {
+    // The whole reason this function exists next to `readOptionalString`,
+    // which collapses both of these into `undefined`.
+    expect(readClearableString({ providerSymbol: null }, 'providerSymbol')).toBeNull()
+  })
+
+  it('throws when the field is present but neither a string nor null', () => {
+    expect(() => readClearableString({ providerSymbol: 42 }, 'providerSymbol'))
+      .toThrow('Field "providerSymbol" must be a string, received 42')
+    expect(() => readClearableString({ providerSymbol: 42 }, 'providerSymbol')).toThrow(ValidationError)
   })
 })
 

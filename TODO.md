@@ -29,8 +29,13 @@ route tests against that real server, not against the handlers in isolation.
 Deliberate gaps and deferred fixes, so plan 3 inherits them as decisions rather than rediscovering
 them as surprises.
 
-- **`PATCH /api/funds/:id` cannot clear `providerSymbol` back to `null`.** The funds screen needs
-  that to undo a wrong symbol choice.
+- ~~**`PATCH /api/funds/:id` cannot clear `providerSymbol` back to `null`.**~~ Fixed in task 1.5 of
+  plan 3: `readClearableString` keeps absent (`undefined`, leave it alone) apart from an explicit
+  `null` (clear the column), the distinction `readOptionalString` collapses. What it leaves open is
+  the neighbouring case: **`providerSymbol: ''` is still accepted**, on `POST /api/funds` as well as
+  on the `PATCH`, and `nav-sync.ts` skips a fund on `providerSymbol === null` only — so an empty
+  string is a symbol as far as the sync is concerned and would be sent to Yahoo verbatim. A funds
+  screen that clears the field with `''` instead of `null` would trip that.
 - **Purchase and rule amounts still accept zero and negative values.** No validation rejects them.
 - **Scenario `color` is not restricted** to the `chart-1` … `chart-5` tokens the theme declares.
 - **Fund `currency` accepts an empty string.**

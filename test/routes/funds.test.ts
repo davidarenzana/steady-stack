@@ -108,6 +108,30 @@ describe('PATCH /api/funds/:id', () => {
 
     expect(response.status).toBe(404)
   })
+
+  it('sets a providerSymbol, clears it with an explicit null, and leaves it alone when the field is absent', async () => {
+    // Undoing a wrong share-class choice. Section 6 of the spec has one ISIN
+    // publishing several share classes at different prices, so picking the
+    // wrong one is an ordinary mistake, and `null` is the only way to say
+    // "none of them" again — an absent field has to keep meaning "leave it".
+    const chosen = await $fetch('/api/funds/world', {
+      method: 'PATCH',
+      body: { providerSymbol: '0P0001CLDK.F' },
+    })
+    expect(chosen.providerSymbol).toBe('0P0001CLDK.F')
+
+    const cleared = await $fetch('/api/funds/world', {
+      method: 'PATCH',
+      body: { providerSymbol: null },
+    })
+    expect(cleared.providerSymbol).toBeNull()
+
+    const renamed = await $fetch('/api/funds/world', {
+      method: 'PATCH',
+      body: { name: 'Fidelity MSCI World Index Fund EUR P Acc' },
+    })
+    expect(renamed.providerSymbol).toBeNull()
+  })
 })
 
 describe('DELETE /api/funds/:id', () => {
