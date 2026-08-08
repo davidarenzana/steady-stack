@@ -174,6 +174,46 @@ describe('listPurchases', () => {
       ['2026-09-01', 1],
     ])
   })
+
+  it('narrows by fundId, from and to when a filter is given', () => {
+    temp.db.insert(portfolios).values({ id: PORTFOLIO_ID, name: 'Cartera indexada' }).run()
+    temp.db.insert(funds).values([
+      { id: 'world', isin: 'IE00BYX5NX33', name: 'Fidelity MSCI World' },
+      { id: 'emerging', isin: 'IE00B4L5ZX48', name: 'iShares Emerging Markets' },
+    ]).run()
+    temp.db.insert(purchases).values([
+      { portfolioId: PORTFOLIO_ID, fundId: 'world', month: '2026-07', date: '2026-07-01', amount: 16_000, nav: '10', units: '1.600000', source: 'auto' },
+      { portfolioId: PORTFOLIO_ID, fundId: 'world', month: '2026-08', date: '2026-08-03', amount: 16_000, nav: '10', units: '1.600000', source: 'auto' },
+      { portfolioId: PORTFOLIO_ID, fundId: 'emerging', month: '2026-08', date: '2026-08-03', amount: 4_000, nav: '10', units: '0.400000', source: 'auto' },
+      { portfolioId: PORTFOLIO_ID, fundId: 'world', month: '2026-09', date: '2026-09-01', amount: 16_000, nav: '10', units: '1.600000', source: 'auto' },
+    ]).run()
+
+    expect(listPurchases(temp.db, PORTFOLIO_ID, { fundId: 'world' }).map(r => r.date))
+      .toEqual(['2026-07-01', '2026-08-03', '2026-09-01'])
+
+    expect(listPurchases(temp.db, PORTFOLIO_ID, { from: '2026-08-01', to: '2026-08-31' }).map(r => r.fundId))
+      .toEqual(['world', 'emerging'])
+
+    expect(listPurchases(temp.db, PORTFOLIO_ID, { fundId: 'emerging', from: '2026-01-01', to: '2026-12-31' }))
+      .toHaveLength(1)
+  })
+
+  it('applies no filter, and defaults to every purchase of the portfolio, when the filter argument is omitted', () => {
+    temp.db.insert(portfolios).values({ id: PORTFOLIO_ID, name: 'Cartera indexada' }).run()
+    temp.db.insert(funds).values({ id: 'world', isin: 'IE00BYX5NX33', name: 'Fidelity MSCI World' }).run()
+    temp.db.insert(purchases).values({
+      portfolioId: PORTFOLIO_ID,
+      fundId: 'world',
+      month: '2026-08',
+      date: '2026-08-03',
+      amount: 16_000,
+      nav: '10',
+      units: '1.600000',
+      source: 'auto',
+    }).run()
+
+    expect(listPurchases(temp.db)).toHaveLength(1)
+  })
 })
 
 describe('listScenarios', () => {

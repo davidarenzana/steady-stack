@@ -31,6 +31,39 @@ import { NotFoundError } from '../utils/errors'
  */
 export { NotFoundError }
 
+/** Everything `GET /api/portfolio` answers: the portfolio row plus the first month it has ever governed. */
+export interface PortfolioView {
+  id: string
+  name: string
+  currency: string
+  horizonYears: number
+  /** The earliest contribution rule's `fromMonth`, the same one `horizonMonths` starts from. `null` with no rule at all. */
+  firstMonth: Month | null
+}
+
+/**
+ * The one portfolio, plus `firstMonth`, derived the same way `horizonMonths`
+ * derives it: the earliest contribution rule's `fromMonth` (`listRules`
+ * already returns rules ordered by that column, so the first one is it).
+ * Throws `NotFoundError` if the portfolio row itself is missing, which is
+ * only reachable on a database that was never seeded.
+ */
+export function buildPortfolioView(db: AppDatabase, portfolioId: string = PORTFOLIO_ID): PortfolioView {
+  const portfolio = getPortfolio(db, portfolioId)
+  if (!portfolio) {
+    throw new NotFoundError(`Portfolio "${portfolioId}" not found`)
+  }
+
+  const rules = listRules(db, portfolioId)
+  return {
+    id: portfolio.id,
+    name: portfolio.name,
+    currency: portfolio.currency,
+    horizonYears: portfolio.horizonYears,
+    firstMonth: rules[0]?.fromMonth ?? null,
+  }
+}
+
 /** One fund's position, plus the display name and the date its own NAV was published. */
 export interface FundPositionView extends FundPosition {
   name: string

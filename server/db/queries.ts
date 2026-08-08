@@ -56,14 +56,40 @@ export function listOverrides(db: AppDatabase, portfolioId: string = PORTFOLIO_I
     .all()
 }
 
+/** Narrows `listPurchases` to a fund, a date window, or both. Every bound is inclusive. */
+export interface PurchaseFilter {
+  fundId?: string
+  from?: IsoDate
+  to?: IsoDate
+}
+
 /**
  * Lists the purchases of a portfolio, ordered by `date` then `id`. The `id`
  * tiebreak matters: several purchases can share a date, and the XIRR
  * calculation needs a stable order over its cash flows.
+ *
+ * `filter` narrows the result the same way `listNavs` narrows a fund's
+ * quotes: by fund, by date window, or both. Omitted, it is every purchase of
+ * the portfolio, exactly as before this parameter existed.
  */
-export function listPurchases(db: AppDatabase, portfolioId: string = PORTFOLIO_ID): PurchaseRow[] {
+export function listPurchases(
+  db: AppDatabase,
+  portfolioId: string = PORTFOLIO_ID,
+  filter: PurchaseFilter = {},
+): PurchaseRow[] {
+  const conditions = [eq(purchases.portfolioId, portfolioId)]
+  if (filter.fundId !== undefined) {
+    conditions.push(eq(purchases.fundId, filter.fundId))
+  }
+  if (filter.from !== undefined) {
+    conditions.push(gte(purchases.date, filter.from))
+  }
+  if (filter.to !== undefined) {
+    conditions.push(lte(purchases.date, filter.to))
+  }
+
   return db.select().from(purchases)
-    .where(eq(purchases.portfolioId, portfolioId))
+    .where(and(...conditions))
     .orderBy(asc(purchases.date), asc(purchases.id))
     .all()
 }

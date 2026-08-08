@@ -10,6 +10,7 @@ import {
   buildContributionsView,
   buildDashboard,
   buildFundsView,
+  buildPortfolioView,
   currentValuation,
   horizonMonths,
   portfolioSeries,
@@ -368,6 +369,35 @@ describe('buildFundsView', () => {
       units: '4.000000',
       invested: 4_000,
     })
+  })
+})
+
+describe('buildPortfolioView', () => {
+  it('carries the portfolio row and the earliest rule\'s fromMonth as firstMonth', () => {
+    seedInitialData(temp.db)
+
+    const view = buildPortfolioView(temp.db)
+
+    expect(view).toEqual({
+      id: PORTFOLIO_ID,
+      name: 'Cartera indexada',
+      currency: 'EUR',
+      horizonYears: 25,
+      firstMonth: '2026-07',
+    })
+  })
+
+  it('returns firstMonth null when the portfolio has no contribution rule at all', () => {
+    seedPortfolioAndFunds()
+
+    const view = buildPortfolioView(temp.db)
+
+    expect(view.firstMonth).toBeNull()
+  })
+
+  it('throws NotFoundError, naming the portfolio, when the portfolio row does not exist', () => {
+    expect(() => buildPortfolioView(temp.db)).toThrow(`Portfolio "${PORTFOLIO_ID}" not found`)
+    expect(() => buildPortfolioView(temp.db)).toThrow(NotFoundError)
   })
 })
 
