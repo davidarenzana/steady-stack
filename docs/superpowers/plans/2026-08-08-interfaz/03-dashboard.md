@@ -18,7 +18,7 @@ Tick each task as it closes. **Commit after every task**: the main agent stages 
 the `committer` agent writes the message — no conventional-commit prefix, no co-authorship
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
-- [ ] Task 3.1 — Semantic colour tokens and `<SummaryCard>`
+- [x] Task 3.1 — Semantic colour tokens and `<SummaryCard>`
 - [ ] Task 3.2 — `<HeadlineValuation>`, the answer to "what is it worth and am I up"
 - [ ] Task 3.3 — `<EmptyDashboard>`, the first screen anyone sees
 - [ ] Task 3.4 — `<PortfolioSummary>`, and the three interface requirements of spec section 11
