@@ -2,6 +2,8 @@
 import type { Dashboard, FundView } from '~~/server/services/read-model'
 import ErrorNotice from '~/components/ErrorNotice.vue'
 import PageHeader from '~/components/PageHeader.vue'
+import EvolutionChart from '~/components/chart/EvolutionChart.vue'
+import { buildEvolutionSeries } from '~/components/chart/evolution-series'
 import FundPositionsTable from '~/components/dashboard/FundPositionsTable.vue'
 import PortfolioSummary from '~/components/dashboard/PortfolioSummary.vue'
 import { Button } from '~/components/ui/button'
@@ -50,6 +52,11 @@ const notice = computed(() => error.value?.statusCode === 404
     })
 
 const positions = computed(() => data.value?.valuation.byFund ?? [])
+
+/** The chart's own shape, built by a mapper that knows nothing about Unovis. */
+const chart = computed(() => data.value
+  ? buildEvolutionSeries(data.value)
+  : { points: [], series: [] })
 </script>
 
 <template>
@@ -64,6 +71,23 @@ const positions = computed(() => data.value?.valuation.byFund ?? [])
 
     <template v-else-if="data">
       <PortfolioSummary :dashboard="data" :funds="funds" />
+
+      <section class="mt-10">
+        <h2 class="font-heading mb-3 text-sm font-semibold tracking-tight">
+          Evolución
+        </h2>
+
+        <!-- Unovis builds its SVG against a real layout, so rendering it on the
+             server gives at best a wrong-sized chart and at worst a crash on a
+             missing DOM API. The fallback is server-rendered, so the page is
+             never a hole while the chart arrives. -->
+        <ClientOnly>
+          <EvolutionChart :points="chart.points" :series="chart.series" />
+          <template #fallback>
+            <p class="text-muted-foreground text-sm">Preparando el gráfico…</p>
+          </template>
+        </ClientOnly>
+      </section>
 
       <section v-if="positions.length > 0" class="mt-10">
         <h2 class="font-heading mb-3 text-sm font-semibold tracking-tight">
