@@ -21,13 +21,15 @@ import {
 } from '../db/queries'
 import { toContributionOverride, toContributionRule, toPurchase } from '../db/mappers'
 import type { ContributionOverrideRow, ContributionRuleRow } from '../db/schema'
+import { NotFoundError } from '../utils/errors'
 
 /**
- * Thrown when a figure the dashboard needs cannot be produced because a
- * fund holding units has no NAV to value it with. The route layer turns
- * this into a 404 the interface can explain, rather than a 500.
+ * Re-exported so existing callers keep importing it from here: thrown when a
+ * figure the dashboard needs cannot be produced because a fund holding units
+ * has no NAV to value it with. The route layer turns this into a 404 the
+ * interface can explain, rather than a 500.
  */
-export class NotFoundError extends Error {}
+export { NotFoundError }
 
 /** One fund's position, plus the display name and the date its own NAV was published. */
 export interface FundPositionView extends FundPosition {
