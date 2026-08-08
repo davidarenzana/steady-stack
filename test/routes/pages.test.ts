@@ -155,6 +155,18 @@ describe('the dashboard', () => {
     expect(html).toContain('160,0000')
   })
 
+  it('renders the chart region', async () => {
+    // All an HTTP test can honestly claim about a client-drawn chart: the
+    // region is on the page and the server-side render does not throw. The
+    // fallback text is what proves the `<ClientOnly>` wrapper is still there —
+    // Unovis builds its SVG against a real layout, so server-rendering it
+    // would be a wrong-sized chart at best.
+    const html = await (await fetch('/')).text()
+
+    expect(html).toContain('Evolución')
+    expect(html).toContain('Preparando el gráfico')
+  })
+
   it('renders the figures with tabular numerals in the served HTML', async () => {
     // Asserted here and not only in the component tests: a class that exists
     // on a mounted component but never reaches the server-rendered markup
