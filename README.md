@@ -29,11 +29,13 @@ The persistence layer is going in underneath it now.
 | SQLite schema, mappers and seeded initial data | done |
 | NAV download from Yahoo | done |
 | Idempotent sync and materialisation into purchases | done |
+| Valuation, XIRR and scenario projection off the database | done |
 | Nitro API routes | pending |
 | Interface | pending |
 
-197 tests passing, none of which opens a network socket. `pnpm sync:nav` downloads real net asset
-values; there is no interface yet.
+219 tests passing, none of which opens a network socket. `pnpm sync:nav` downloads real net asset
+values and the read model produces the figures a dashboard would render; there is no interface yet,
+so there is nothing to open in a browser.
 
 ## Getting started
 
@@ -101,7 +103,7 @@ overstates the result by 14.415 €. The correct rate is 0,7207 %, which turns 1
 - [`docs/superpowers/plans/2026-08-06-motor-de-calculo.md`](docs/superpowers/plans/2026-08-06-motor-de-calculo.md)
   — the implementation plan for the calculation engine, complete
 - [`docs/superpowers/plans/2026-08-07-persistencia-y-red.md`](docs/superpowers/plans/2026-08-07-persistencia-y-red.md)
-  — the implementation plan for persistence and the network, phases 1 to 3 of 5 complete
+  — the implementation plan for persistence and the network, phases 1 to 4 of 5 complete
 
 ## Conventions
 

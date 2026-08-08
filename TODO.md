@@ -4,36 +4,47 @@ Open threads, so none of this has to be reconstructed from memory.
 
 ## Next up
 
-**Plan 2, task 8 — the Yahoo provider.** The only task left in phase 2 of
-[the plan](docs/superpowers/plans/2026-08-07-persistencia-y-red.md). Everything it needs is already
-committed: the `PriceProvider` interface it implements, and the recorded and handmade fixtures its
-tests read. It was not started because the org hit its monthly spend limit and the subagents this
-project is built with stopped running.
+**Plan 2, phase 5 — the Nitro routes.** Tasks 14 to 18 of
+[the plan](docs/superpowers/plans/2026-08-07-persistencia-y-red.md), the last five of eighteen: the
+HTTP plumbing that turns domain errors into H3 errors, then the read, write and action routes, then
+the closing verification. The 26 routes are already tabulated in the plan with their request and
+response shapes, and phase 3 of plan 3 will be written against that table, so it is not to be
+changed casually.
 
-**Three response shapes its `history()` has to survive**, all three now on disk under
-`server/providers/__fixtures__/`:
+**Phases 1 to 4 are done** — commits `0c4882e..3ffb298`, 219 tests green, none of them opening a
+network socket. The database and its seeded portfolio, the Yahoo provider over recorded fixtures,
+idempotent NAV sync, materialisation into frozen purchases, and the read model that produces the
+exact figures the dashboard will render.
 
-1. A full daily series — `chart-0P0001CLDK.F.json`, 254 points, `currency: EUR`.
-2. An error payload — `chart.result` is `null` and `chart.error` carries a code.
-3. **A result with no data** — `chart-IE00BYX5NX33.SG.json` came back with `meta` and `indicators`
-   only, **no `timestamp` key at all**, and `error: null`. This is real, unaltered Yahoo output, not
-   a corrupt fixture. Do not "fix" it. A parser doing `result[0].timestamp.length` throws a
-   `TypeError` on it.
+Then plan 3, the interface, which is not written yet. There is still nothing to open in a browser.
 
-**A ruling already made, so it does not have to be re-decided:** the interface's *"no gaps and no
-nulls"* means nulls are **dropped** from the series — never thrown on, never interpolated. A day
-whose close is `null` simply has no NAV, and the application values with the latest available one
-and shows its date. The publication lag is real and visible: the last three closes of the captured
-254-point series are `14.277199745178223, null, null`.
+### Carry these into task 14
 
-**Phase 1 is done** — commits `0c4882e..32ac819`. The Drizzle schema for the seven tables, the
-SQLite client, a temp-database helper, the row↔domain mappers and typed queries, and the seeded
-initial data. `pnpm db:seed` idempotent.
+- **`NotFoundError` is defined inside `server/services/read-model.ts`.** The plan puts it in
+  `server/utils/errors.ts` beside `ValidationError` and `ConflictError`. Task 14 must **move** it,
+  not define a second one.
+- **`syncNavs` can partially succeed and then throw.** Task 9 made it finish its loop after a
+  provider failure so the funds ordered after the failing one still commit, then throw. The sync
+  route must report what did land rather than treating the throw as nothing having happened.
+- **`buildFundsView` returns `value: 0` for a fund that holds units but has no NAV**, rather than
+  throwing the way `currentValuation` does for the same situation. It is deliberate — one unrated
+  fund should not 404 the whole funds screen — and the consumer distinguishes the cases through
+  `latestNav: null`. Only the no-purchases case is tested. If the interface ever sums `value`
+  across funds it will silently under-count, so plan 3 needs to know.
 
-**Phase 2 is two thirds done** — commits `bdc5450` and `9b11607`. 145 tests green.
+### Rulings already made, so they are not re-litigated
 
-Phases 3 to 5 after that: idempotent NAV sync and materialisation, the read model, and the 26 Nitro
-routes. Then plan 3, the interface, which is not written yet.
+- **Nulls are dropped from a NAV series** — never thrown on, never interpolated. A day whose close
+  is `null` simply has no net asset value; the application values with the latest available one and
+  shows its date. The publication lag is real and visible: the last three closes of the captured
+  254-point series are `14.277199745178223, null, null`.
+- **The real portfolio series is `null` where unknown, never `0`.** A zero claims the portfolio was
+  worth nothing; a `null` says we do not know.
+- **A month is valued at its last day, except the month `asOf` falls in, which is clamped to
+  `asOf`.** Otherwise a hand-entered NAV dated later in the same month — reachable through
+  `PUT /api/nav` — makes today's chart point read a price that has not happened yet.
+- **Yahoo's third response shape is real, not corruption.** `chart-IE00BYX5NX33.SG.json` has `meta`
+  and `indicators` but **no `timestamp` key**, with `error: null`. Do not "fix" that fixture.
 
 ## Carried over from the phase 1 reviews
 
