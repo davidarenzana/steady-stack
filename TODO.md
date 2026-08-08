@@ -4,17 +4,33 @@ Open threads, so none of this has to be reconstructed from memory.
 
 ## Next up
 
-**Plan 2, phase 2 — the price providers.** Tasks 6, 7 and 8 of
-[the plan](docs/superpowers/plans/2026-08-07-persistencia-y-red.md): the `PriceProvider` interface
-with manual entry, a one-off capture of the Yahoo fixtures, and the Yahoo implementation tested
-only against those recorded responses.
+**Plan 2, task 8 — the Yahoo provider.** The only task left in phase 2 of
+[the plan](docs/superpowers/plans/2026-08-07-persistencia-y-red.md). Everything it needs is already
+committed: the `PriceProvider` interface it implements, and the recorded and handmade fixtures its
+tests read. It was not started because the org hit its monthly spend limit and the subagents this
+project is built with stopped running.
 
-Task 7 is the one that needs a network and a human: it runs `pnpm capture:fixtures` by hand, once,
-and commits what comes back. Every other test in the project must keep passing with the wifi off.
+**Three response shapes its `history()` has to survive**, all three now on disk under
+`server/providers/__fixtures__/`:
+
+1. A full daily series — `chart-0P0001CLDK.F.json`, 254 points, `currency: EUR`.
+2. An error payload — `chart.result` is `null` and `chart.error` carries a code.
+3. **A result with no data** — `chart-IE00BYX5NX33.SG.json` came back with `meta` and `indicators`
+   only, **no `timestamp` key at all**, and `error: null`. This is real, unaltered Yahoo output, not
+   a corrupt fixture. Do not "fix" it. A parser doing `result[0].timestamp.length` throws a
+   `TypeError` on it.
+
+**A ruling already made, so it does not have to be re-decided:** the interface's *"no gaps and no
+nulls"* means nulls are **dropped** from the series — never thrown on, never interpolated. A day
+whose close is `null` simply has no NAV, and the application values with the latest available one
+and shows its date. The publication lag is real and visible: the last three closes of the captured
+254-point series are `14.277199745178223, null, null`.
 
 **Phase 1 is done** — commits `0c4882e..32ac819`. The Drizzle schema for the seven tables, the
 SQLite client, a temp-database helper, the row↔domain mappers and typed queries, and the seeded
-initial data. 140 tests green, `pnpm db:seed` idempotent.
+initial data. `pnpm db:seed` idempotent.
+
+**Phase 2 is two thirds done** — commits `bdc5450` and `9b11607`. 145 tests green.
 
 Phases 3 to 5 after that: idempotent NAV sync and materialisation, the read model, and the 26 Nitro
 routes. Then plan 3, the interface, which is not written yet.
@@ -35,6 +51,20 @@ end of plan 2 should triage them:
   database. Nothing does that yet; `scripts/` might.
 - `assertTiming`, `assertPurchaseSource` and `assertNavSource` are near-identical three-line
   functions and could collapse into one `assertEnum(value, field, allowed)`.
+
+And two from phase 2:
+
+- `scripts/capture-yahoo-fixtures.ts` calls `main()` with no `.catch()`. A DNS or offline failure
+  gives an unhandled rejection with a stack trace instead of the clean exit the script implements
+  for a non-2xx response.
+- `server/providers/__fixtures__/README.md` does not mention the third response shape described
+  above. It is the one piece of context whoever writes task 8 most needs and is least likely to
+  guess.
+
+**Task 7 was reviewed by the main session, not by a `reviewer` subagent** — the reviewer died on the
+spend limit mid-task. The checks were run for real (headers, delay, exit code, URL list, fixture
+quirks intact, no socket in any test, `core/` untouched), but nobody audited that work with fresh
+eyes. Worth a second look when the budget allows.
 
 ## Deferred by decision
 
