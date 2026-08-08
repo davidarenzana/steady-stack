@@ -20,7 +20,7 @@ line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
 - [x] Task 3.1 — Semantic colour tokens and `<SummaryCard>`
 - [x] Task 3.2 — `<HeadlineValuation>`, the answer to "what is it worth and am I up"
-- [ ] Task 3.3 — `<EmptyDashboard>`, the first screen anyone sees
+- [x] Task 3.3 — `<EmptyDashboard>`, the first screen anyone sees
 - [ ] Task 3.4 — `<PortfolioSummary>`, and the three interface requirements of spec section 11
 - [ ] Task 3.5 — `<FundPositionsTable>`
 - [ ] Task 3.6 — The dashboard page
