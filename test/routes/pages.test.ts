@@ -177,3 +177,56 @@ describe('the dashboard', () => {
     expect(html).toMatch(/class="[^"]*tabular-nums/)
   })
 })
+
+/**
+ * The contributions screen. Placed after the dashboard block, which arranges
+ * the purchases these assertions then see as materialised months.
+ */
+describe('/aportaciones', () => {
+  it('renders the seeded plan', async () => {
+    const html = await (await fetch('/aportaciones')).text()
+
+    expect(html).toContain('Aportaciones')
+    // The two seeded rules: 2.000 € from 2026-07, then 200 € from 2026-08.
+    expect(html).toContain('2.000,00 €')
+    expect(html).toContain('200,00 €')
+    // The split as percentages against the real fund name, which is the whole
+    // of what the route gives the screen to work with.
+    expect(html).toContain('80 % Fidelity MSCI World Index Fund EUR P Acc')
+    expect(html).toContain('Pendiente')
+    expect(html).not.toContain('NaN')
+  })
+
+  it('states that editing a rule never rewrites the past', async () => {
+    // Section 4 of the spec, on the screen rather than only behind it.
+    const html = await (await fetch('/aportaciones')).text()
+
+    expect(html).toContain('Editar una regla nunca reescribe el pasado')
+  })
+
+  it('marks a month materialised once its purchases exist', async () => {
+    // The dashboard block above inserted the 2026-07 purchases, so the
+    // calendar has to show that month as settled while later ones stay
+    // pending. This is `buildContributionsView` joining derived months against
+    // stored purchases, seen from the screen.
+    const html = await (await fetch('/aportaciones')).text()
+
+    expect(html).toContain('Materializada')
+  })
+
+  it('offers the forms that change the plan', async () => {
+    const html = await (await fetch('/aportaciones')).text()
+
+    expect(html).toContain('Añadir regla')
+    expect(html).toContain('Guardar excepción')
+    expect(html).toContain('Materializar aportaciones')
+  })
+
+  it('aligns the calendar figures with tabular numerals', async () => {
+    // The same first-paint concern as on the dashboard, for the table this
+    // screen is mostly made of.
+    const html = await (await fetch('/aportaciones')).text()
+
+    expect(html).toMatch(/class="[^"]*tabular-nums/)
+  })
+})

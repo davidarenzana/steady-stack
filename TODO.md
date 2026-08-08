@@ -39,6 +39,9 @@ them as surprises.
   string is a symbol as far as the sync is concerned and would be sent to Yahoo verbatim. A funds
   screen that clears the field with `''` instead of `null` would trip that.
 - **Purchase and rule amounts still accept zero and negative values.** No validation rejects them.
+  `RuleForm` and `OverrideForm` refuse a zero on the client since phase 5, so the interface is
+  stricter than the route it talks to — which is the wrong way round for a rule the database should
+  be enforcing.
 - **Scenario `color` is not restricted** to the `chart-1` … `chart-5` tokens the theme declares.
 - **Fund `currency` accepts an empty string.**
 - **`purchases.date` is not future-bounded**, though `nav.date` is.
@@ -116,6 +119,22 @@ deferred findings above are the last list any outside reader produced for this p
 None of the findings above were fixed while closing plan 2 — task 18 is verification and
 documentation, not a cleanup pass — so they carry forward into plan 3's backlog alongside the
 *Findings this plan leaves for plan 3* above.
+
+## Findings the interface found in the route surface
+
+Raised by building the screens against the routes, for triage in plan 3's closing task. Neither is a
+bug — both are places where the payload makes the interface work harder than it should have to.
+
+- **`GET /api/contributions` returns `rules[].weights` as a serialised JSON string, not a
+  `Weight[]`.** The route hands back the Drizzle row and `weights` is a `TEXT` column holding
+  `JSON.stringify(Weight[])`. The `months[].weights` of the very same response *is* a real array,
+  because it comes from `expandContributions` — so the interface parses one and not the other, which
+  is why `parseWeights` exists in `app/utils/parse.ts`. Two shapes for one concept in one payload.
+- **`GET /api/contributions` gives no per-fund euro split.** A month reports `amount: 20000` and
+  `weights: [80 %, 20 %]`, never `16000 / 4000`. Splitting 200 € into 160 € and 40 € is `split()`'s
+  largest-remainder arithmetic in `core/money.ts`, and the interface does no arithmetic on money — so
+  **the contributions screen shows percentages where a user would rather read euros.** Closing this
+  means the read model doing the split, not the interface.
 
 ## Deferred by decision
 
