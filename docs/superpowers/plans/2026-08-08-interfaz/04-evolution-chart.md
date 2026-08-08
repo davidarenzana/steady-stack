@@ -18,7 +18,7 @@ Tick each task as it closes. **Commit after every task**: the main agent stages 
 the `committer` agent writes the message — no conventional-commit prefix, no co-authorship
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
-- [ ] Task 4.1 — The mapper, `buildEvolutionSeries`
+- [x] Task 4.1 — The mapper, `buildEvolutionSeries`
 - [ ] Task 4.2 — The visible range, and why it is not the whole horizon
 - [ ] Task 4.3 — `<EvolutionChart>` over Unovis
 - [ ] Task 4.4 — The chart on the dashboard
