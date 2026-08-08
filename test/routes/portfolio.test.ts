@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { eq } from 'drizzle-orm'
 import { $fetch, fetch } from '@nuxt/test-utils/e2e'
 import { deletePurchase, getFund, insertPurchase, upsertNav } from '../../server/db/queries'
-import { setupRouteServer } from '../../server/test-utils/route-server'
+import { fetchJson, setupRouteServer, withQuery } from '../../server/test-utils/route-server'
+import { navs } from '../../server/db/schema'
 import type { Dashboard } from '../../server/services/read-model'
 
 const database = await setupRouteServer()
@@ -43,22 +45,18 @@ describe('PATCH /api/portfolio', () => {
   })
 
   it('rejects a horizonYears of 0', async () => {
-    // `fetch` here is the plain global fetch, unlike `$fetch`: it does not
-    // serialise the body itself, so it must be JSON-stringified explicitly.
-    const response = await fetch('/api/portfolio', {
+    const response = await fetchJson('/api/portfolio', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ horizonYears: 0 }),
+      body: { horizonYears: 0 },
     })
 
     expect(response.status).toBe(400)
   })
 
   it('rejects a fractional horizonYears', async () => {
-    const response = await fetch('/api/portfolio', {
+    const response = await fetchJson('/api/portfolio', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ horizonYears: 1.5 }),
+      body: { horizonYears: 1.5 },
     })
 
     expect(response.status).toBe(400)
@@ -121,8 +119,7 @@ describe('GET /api/dashboard', () => {
   })
 
   it('rejects a malformed asOf', async () => {
-    // Plain `fetch` has no `query` shorthand — build the query string by hand.
-    const response = await fetch('/api/dashboard?asOf=not-a-date')
+    const response = await fetch(withQuery('/api/dashboard', { asOf: 'not-a-date' }))
 
     expect(response.status).toBe(400)
   })
@@ -165,9 +162,10 @@ describe('GET /api/dashboard — the current month reads no further ahead than a
       expect(body.navDate).toBe('2026-07-01')
     }
     finally {
-      // Cleanup so the write-isolation test below, and any other file
-      // sharing this database, is not left with a stray purchase.
+      // Cleanup so no later test in this file — nor a future one added to
+      // it — inherits a stray purchase or a `world` NAV it did not ask for.
       deletePurchase(database.db, purchase.id)
+      database.db.delete(navs).where(eq(navs.fundId, 'world')).run()
     }
   })
 })

@@ -17,8 +17,8 @@ Tick each task as it closes. **Commit after every task**: the main agent stages 
 the `committer` agent writes the message — no conventional-commit prefix, no co-authorship
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
-- [ ] Task 1.1 — The database file and the migrations folder come from the environment
-- [ ] Task 1.2 — The route-test harness and a smoke test
+- [x] Task 1.1 — The database file and the migrations folder come from the environment
+- [x] Task 1.2 — The route-test harness and a smoke test
 - [x] Task 1.3 — Portfolio and dashboard routes (1, 2, 3)
 - [ ] Task 1.4 — Funds routes (4, 5, 6, 7, 8)
 - [ ] Task 1.5 — `PATCH /api/funds/:id` can clear `providerSymbol` back to `null`

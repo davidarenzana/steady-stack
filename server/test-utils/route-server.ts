@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { afterAll } from 'vitest'
-import { setup } from '@nuxt/test-utils/e2e'
+import { fetch, setup } from '@nuxt/test-utils/e2e'
 import { MIGRATIONS_FOLDER } from '../db/client'
 import { seedInitialData } from '../db/seed'
 import { YAHOO_FIXTURES_DIR } from '../providers/yahoo'
@@ -52,4 +52,36 @@ export async function setupRouteServer(options?: { seed?: boolean }): Promise<Te
   })
 
   return temp
+}
+
+/**
+ * `fetch`, re-exported by `@nuxt/test-utils/e2e` for status-code assertions
+ * (`$fetch` throws on a non-2xx response instead of returning it), is the
+ * plain global `fetch` — not `ofetch`. It does not serialise a JS object
+ * body, and it has no `query` shorthand. Passing `{ body: { horizonYears: 0
+ * } }` straight to it does not throw: the body silently stringifies to
+ * `"[object Object]"`, the server reads that as no usable JSON, the
+ * optional field is treated as absent, and a test written to expect a 400
+ * gets back a 200. That reads as the handler being broken, not the test —
+ * it cost real time to trace once, which is why these two helpers exist
+ * rather than a comment asking the next person to remember.
+ *
+ * Kept deliberately thin: this is a test harness, not an HTTP client. Both
+ * the status code and the parsed body stay visible to the caller, because a
+ * status-code test needs the `Response` and a body test needs the JSON.
+ */
+
+/** Sends a JSON body through the plain `fetch` above, with the header a real client would set for you. `body` is stringified only when given, so a bodiless request — a DELETE, most often — is unaffected. */
+export function fetchJson(path: string, options: { method: string, body?: unknown }): Promise<Response> {
+  return fetch(path, {
+    method: options.method,
+    headers: { 'Content-Type': 'application/json' },
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  })
+}
+
+/** Appends a query string built from `params` to `path`, for the same plain `fetch`, which — unlike `$fetch` — takes no `query` option to do this for you. */
+export function withQuery(path: string, params: Record<string, string>): string {
+  const query = new URLSearchParams(params).toString()
+  return query.length === 0 ? path : `${path}?${query}`
 }
