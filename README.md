@@ -53,10 +53,16 @@ pnpm build          # production build
 pnpm db:generate    # generate a migration from the Drizzle schema
 pnpm db:migrate     # apply pending migrations
 pnpm db:seed        # write the initial portfolio; idempotent, run it as often as you like
+pnpm sync:nav       # download the missing NAVs from Yahoo; --materialise turns due months into purchases
 ```
 
 The database is a single file, `data/steady-stack.db`, and it is git-ignored. `pnpm db:seed` creates
 it and fills in the portfolio, its two funds, the contribution rules and the scenarios.
+
+`pnpm sync:nav` asks Yahoo Finance only for the days missing since the last run, so it is safe to run
+as often as wanted: a same-day rerun asks the provider for nothing and changes nothing. A fund with no
+`provider_symbol` set is reported as skipped rather than queried. Add `--materialise` to also turn
+every contribution month that has arrived into stored purchases, once its funds have a NAV to buy at.
 
 ## Project structure
 
