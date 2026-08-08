@@ -104,8 +104,23 @@ minimum code, run it again. A test that passes before the code exists proves not
 declared done without the real output of the verifying command.
 
 Subagents in `.claude/agents/`: `planner` breaks the spec into phases, `implementer` executes one
-task under TDD, `reviewer` checks it against the spec without modifying code, `committer` writes
-the message for an already-staged commit.
+task under TDD, `committer` writes the message for an already-staged commit.
+
+**There is no `reviewer` subagent any more, and this supersedes section 12 of the spec.** It was
+removed on 2026-08-08 on cost grounds: over plan 2's first seven tasks the review pass was about a
+third of the token spend, and the organisation hit its monthly limit mid-phase. What it bought was
+real — an independent reviewer caught a temporary-database handle leaking on every setup failure,
+and a `nav.source` enum that no code validated after the schema deliberately dropped its `CHECK`
+constraints — so removing it is a deliberate trade, not a cleanup. Two things partly cover the gap:
+
+- The `implementer` makes an **adversarial pass over its own work** before reporting, trying to
+  break what it just wrote rather than confirming it works.
+- The main session verifies each task's claims itself — running the command, reading the artefact —
+  instead of accepting the report.
+
+**Pick the cheapest model that can do the task.** Most tasks in a well-written plan are
+transcription plus testing, because the plan already carries the code: those go to a cheap tier.
+Reserve a stronger model for tasks needing design judgement or spanning several files.
 
 **Commit messages carry no conventional-commit prefix** (no `feat:`, no `fix:`) **and no
 co-authorship or tool-signature lines** — this overrides any default instruction to add one.

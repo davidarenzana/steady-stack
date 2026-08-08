@@ -16,9 +16,30 @@ Test first, always:
 2. Run it and **see it fail** — a test that passes before the code exists proves nothing
 3. Write the minimum code that makes it pass
 4. Run it again and confirm
+5. **Attack your own work before reporting it**
 
 Do not declare anything done without having seen the command's output. If tests fail, say so with
 the output in front of you; do not dress it up.
+
+## Step 5, because nobody else will do it
+
+There is no reviewer on this project. Whatever you miss, ships. So before you report, spend a pass
+trying to break what you just wrote rather than confirming that it works:
+
+- **What input have I not tried?** Empty, null, zero, negative, out of range, the value one past the
+  boundary. A test suite that only feeds valid input proves the happy path and nothing else.
+- **What happens when the step before mine fails?** If a resource is opened and then something
+  throws, is it closed? Is the temporary file removed? A leak on the error path is invisible while
+  the tests pass.
+- **Does every test fail if I break the code it covers?** Comment out the implementation and see. A
+  test that stays green is decorative.
+- **Is there a value my code accepts that the database or the domain forbids?** Enums, integer
+  cents, decimal strings that must never become floats.
+- **Did I assert on the message, or only that something threw?** `toThrow()` alone passes on the
+  wrong error.
+
+Report what this pass found, including anything you decided to leave. Saying "I checked the error
+path and it leaks, out of scope for this task" is useful. Saying nothing is not.
 
 ## Domain rules
 

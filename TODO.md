@@ -62,9 +62,13 @@ And two from phase 2:
   guess.
 
 **Task 7 was reviewed by the main session, not by a `reviewer` subagent** — the reviewer died on the
-spend limit mid-task. The checks were run for real (headers, delay, exit code, URL list, fixture
-quirks intact, no socket in any test, `core/` untouched), but nobody audited that work with fresh
-eyes. Worth a second look when the budget allows.
+spend limit mid-task, and the role was removed afterwards. The checks were run for real (headers,
+delay, exit code, URL list, fixture quirks intact, no socket in any test, `core/` untouched), but
+nobody audited that work with fresh eyes.
+
+That is now the standing arrangement rather than an exception: see *How work is done here* in
+`CLAUDE.md`. Tasks 1 to 6 were reviewed independently; from task 7 onwards nothing is, so the
+deferred findings above are the last list any outside reader produced for this plan.
 
 ## Deferred by decision
 
