@@ -1,11 +1,26 @@
 import { valuate, type FundPosition, type Valuation } from '~~/core/valuation'
 import { xirr, type CashFlow } from '~~/core/returns'
 import { lastDayOfMonth, monthOf } from '~~/core/dates'
-import type { Cents, IsoDate, Month } from '~~/core/types'
+import { addMonths, monthRange } from '~~/core/months'
+import { expandContributions } from '~~/core/contributions'
+import { projectScenario } from '~~/core/scenarios'
+import Decimal from '~~/core/decimal'
+import type { Cents, Contribution, IsoDate, Month } from '~~/core/types'
 import type { Purchase } from '~~/core/purchases'
 import type { AppDatabase } from '../db/client'
-import { PORTFOLIO_ID, getFund, latestNavOnOrBefore, listPurchases } from '../db/queries'
-import { toPurchase } from '../db/mappers'
+import {
+  PORTFOLIO_ID,
+  getFund,
+  getPortfolio,
+  latestNavOnOrBefore,
+  listFunds,
+  listOverrides,
+  listPurchases,
+  listRules,
+  listScenarios,
+} from '../db/queries'
+import { toContributionOverride, toContributionRule, toPurchase } from '../db/mappers'
+import type { ContributionOverrideRow, ContributionRuleRow } from '../db/schema'
 
 /**
  * Thrown when a figure the dashboard needs cannot be produced because a
@@ -158,4 +173,215 @@ export function portfolioXirr(
   catch {
     return null
   }
+}
+
+/**
+ * The months a projection runs over: `horizonYears * 12 + 1` of them,
+ * starting at the earliest contribution rule's `fromMonth` (rules come back
+ * from `listRules` already ordered by that column) and ending that many
+ * years later. `[]` when there is no rule at all — nothing to project a
+ * horizon from — which is also what an entirely empty database produces,
+ * without needing a portfolio row to fall back on.
+ */
+export function horizonMonths(db: AppDatabase, portfolioId: string = PORTFOLIO_ID): Month[] {
+  const rules = listRules(db, portfolioId)
+  if (rules.length === 0) {
+    return []
+  }
+
+  const firstMonth = rules[0]!.fromMonth
+  const horizonYears = getPortfolio(db, portfolioId)?.horizonYears ?? 25
+  return monthRange(firstMonth, addMonths(firstMonth, horizonYears * 12))
+}
+
+/** One theoretical scenario, projected month by month for the dashboard's chart. */
+export interface ScenarioSeries {
+  id: string
+  name: string
+  color: string
+  /** Decimal string as a fraction of one, e.g. `'0.09'` for 9 %. */
+  annualRate: string
+  balance: Cents[]
+}
+
+/** Everything `GET /api/dashboard` answers: today's real figures alongside the projected chart. */
+export interface Dashboard {
+  asOf: IsoDate
+  /** The oldest of the per-fund latest NAV dates. `null` when no fund has a NAV yet. */
+  navDate: IsoDate | null
+  valuation: {
+    value: Cents
+    invested: Cents
+    gain: Cents
+    gainRatio: number
+    byFund: FundPositionView[]
+  }
+  /** `null` when there are fewer than two cash flows or they all share a sign. */
+  xirr: number | null
+  series: {
+    /** `horizonYears * 12 + 1` months, starting at the first contribution month. `[]` with no rules. */
+    months: Month[]
+    /** Cumulative planned contributions across the whole horizon. */
+    contributed: Cents[]
+    /** Real portfolio value per month. `null` where it is unknown or still in the future. */
+    portfolio: Array<Cents | null>
+    /** Only scenarios with `enabled = 1`. */
+    scenarios: ScenarioSeries[]
+  }
+}
+
+/**
+ * Assembles the whole dashboard: the real valuation and XIRR from task 12,
+ * plus the theoretical scenario projections, over the horizon of
+ * `horizonMonths`.
+ *
+ * The monthly rate every scenario compounds with is `(1 + r)^(1/12) - 1`,
+ * computed inside `projectScenario` — never re-derived here as `r / 12`,
+ * which would overstate a 25-year, 9 % projection by 14.415 €.
+ *
+ * `series.contributed` is read off the first enabled scenario's points,
+ * because every scenario accumulates the identical contribution series
+ * regardless of its rate. With no scenario enabled it falls back to
+ * projecting at 0 % just to get that column, which changes nothing about
+ * what a 0 % projection accumulates.
+ */
+export function buildDashboard(
+  db: AppDatabase,
+  asOf: IsoDate,
+  portfolioId: string = PORTFOLIO_ID,
+): Dashboard {
+  const { valuation, byFund, navDate } = currentValuation(db, asOf, portfolioId)
+  const xirrValue = portfolioXirr(db, valuation.value, asOf, portfolioId)
+
+  const months = horizonMonths(db, portfolioId)
+  const portfolio = portfolioSeries(db, months, asOf, portfolioId)
+
+  const rules = listRules(db, portfolioId).map(toContributionRule)
+  const overrides = listOverrides(db, portfolioId).map(toContributionOverride)
+  const contributions: Contribution[] = months.length === 0
+    ? []
+    : expandContributions(rules, overrides, months[0]!, months[months.length - 1]!)
+
+  const enabledScenarios = listScenarios(db).filter((scenario) => scenario.enabled === 1)
+  const projected = enabledScenarios.map((scenario) => ({
+    scenario,
+    points: projectScenario(contributions, Number(scenario.annualRate), months),
+  }))
+
+  const contributed = projected.length > 0
+    ? projected[0]!.points.map((point) => point.contributed)
+    : projectScenario(contributions, 0, months).map((point) => point.contributed)
+
+  return {
+    asOf,
+    navDate,
+    valuation: { ...valuation, byFund },
+    xirr: xirrValue,
+    series: {
+      months,
+      contributed,
+      portfolio,
+      scenarios: projected.map(({ scenario, points }) => ({
+        id: scenario.id,
+        name: scenario.name,
+        color: scenario.color,
+        annualRate: scenario.annualRate,
+        balance: points.map((point) => point.balance),
+      })),
+    },
+  }
+}
+
+/** One fund as the funds screen needs it: its identity, its latest quote, and its own position. */
+export interface FundView {
+  id: string
+  isin: string
+  name: string
+  providerSymbol: string | null
+  currency: string
+  latestNav: { date: IsoDate, value: string, source: 'yahoo' | 'manual' } | null
+  /** Accumulated units across every purchase of this fund, as a decimal string. */
+  units: string
+  invested: Cents
+  /** `0` for a fund with no NAV at all — there is nothing to multiply the units by. */
+  value: Cents
+}
+
+/**
+ * One row per fund for the funds screen: its own position, valued at its
+ * own latest NAV on or before `asOf`, independently of every other fund.
+ * Unlike `currentValuation`, a fund with units but no NAV does not throw —
+ * it comes back at `latestNav: null` and `value: 0`, because this view lists
+ * every fund the user manages, including one not quoted yet.
+ */
+export function buildFundsView(
+  db: AppDatabase,
+  asOf: IsoDate,
+  portfolioId: string = PORTFOLIO_ID,
+): FundView[] {
+  const purchases: Purchase[] = listPurchases(db, portfolioId).map(toPurchase)
+
+  return listFunds(db).map((fund) => {
+    const fundPurchases = purchases.filter((p) => p.fundId === fund.id)
+    const units = fundPurchases.reduce((sum, p) => sum.plus(p.units), new Decimal(0))
+    const invested = fundPurchases.reduce((sum, p) => sum + p.amount, 0)
+
+    const navRow = latestNavOnOrBefore(db, fund.id, asOf)
+    const value = navRow
+      ? units.times(navRow.value).times(100).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber()
+      : 0
+
+    return {
+      id: fund.id,
+      isin: fund.isin,
+      name: fund.name,
+      providerSymbol: fund.providerSymbol,
+      currency: fund.currency,
+      latestNav: navRow ? { date: navRow.date, value: navRow.value, source: navRow.source } : null,
+      units: units.toFixed(6),
+      invested,
+      value,
+    }
+  })
+}
+
+/** One row for the contributions screen: a resolved contribution plus whether it is already history. */
+export interface ContributionsViewMonth extends Contribution {
+  /** `true` when a purchase row already exists for this month — the plan already executed. */
+  materialised: boolean
+}
+
+/** Everything `GET /api/contributions` answers. */
+export interface ContributionsView {
+  rules: ContributionRuleRow[]
+  overrides: ContributionOverrideRow[]
+  months: ContributionsViewMonth[]
+}
+
+/**
+ * Expands the rules and overrides of a portfolio into the contribution
+ * series between `from` and `to`, and marks each month as `materialised`
+ * when a purchase row already exists for it — the fact that turns a planned
+ * contribution into an executed one.
+ */
+export function buildContributionsView(
+  db: AppDatabase,
+  from: Month,
+  to: Month,
+  portfolioId: string = PORTFOLIO_ID,
+): ContributionsView {
+  const ruleRows = listRules(db, portfolioId)
+  const overrideRows = listOverrides(db, portfolioId)
+
+  const contributions = expandContributions(
+    ruleRows.map(toContributionRule),
+    overrideRows.map(toContributionOverride),
+    from,
+    to,
+  )
+
+  const materialisedMonths = new Set(listPurchases(db, portfolioId).map((p) => p.month))
+  const months = contributions.map((c) => ({ ...c, materialised: materialisedMonths.has(c.month) }))
+
+  return { rules: ruleRows, overrides: overrideRows, months }
 }

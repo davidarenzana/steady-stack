@@ -1,9 +1,21 @@
+import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { monthRange } from '~~/core/months'
-import { funds, navs, portfolios, purchases } from '../db/schema'
+import { contributionOverrides, contributionRules, funds, navs, portfolios, purchases, scenarios } from '../db/schema'
 import { PORTFOLIO_ID } from '../db/queries'
+import { serialiseWeights } from '../db/mappers'
+import { seedInitialData } from '../db/seed'
 import { createTempDatabase, type TempDatabase } from '../test-utils/temp-db'
-import { currentValuation, portfolioSeries, portfolioXirr, NotFoundError } from './read-model'
+import {
+  buildContributionsView,
+  buildDashboard,
+  buildFundsView,
+  currentValuation,
+  horizonMonths,
+  portfolioSeries,
+  portfolioXirr,
+  NotFoundError,
+} from './read-model'
 
 const WORLD_FUND_ID = 'world'
 const EMERGING_FUND_ID = 'emerging'
@@ -227,5 +239,174 @@ describe('portfolioXirr', () => {
     const rate = portfolioXirr(temp.db, 0, '2022-01-01')
 
     expect(rate).toBeNull()
+  })
+})
+
+describe('horizonMonths', () => {
+  it('runs 301 months, from the first contribution month to twenty-five years later, on the seeded database', () => {
+    seedInitialData(temp.db)
+
+    const months = horizonMonths(temp.db)
+
+    expect(months).toHaveLength(301)
+    expect(months[0]).toBe('2026-07')
+    expect(months.at(-1)).toBe('2051-07')
+  })
+
+  it('shortens to 121 months when the portfolio horizon is set to 10 years', () => {
+    seedInitialData(temp.db)
+    temp.db.update(portfolios).set({ horizonYears: 10 }).where(eq(portfolios.id, PORTFOLIO_ID)).run()
+
+    const months = horizonMonths(temp.db)
+
+    expect(months).toHaveLength(121)
+  })
+
+  it('returns an empty array when the portfolio has no contribution rules', () => {
+    seedPortfolioAndFunds()
+
+    expect(horizonMonths(temp.db)).toEqual([])
+  })
+})
+
+describe('buildDashboard', () => {
+  it('carries the three seeded scenarios, each 301 months long, with the optimistic one at 9 % on chart-1', () => {
+    seedInitialData(temp.db)
+
+    const dashboard = buildDashboard(temp.db, '2026-08-31')
+
+    expect(dashboard.series.scenarios).toHaveLength(3)
+    for (const scenario of dashboard.series.scenarios) {
+      expect(scenario.balance).toHaveLength(301)
+    }
+    const optimistic = dashboard.series.scenarios.find((s) => s.id === 'optimistic')
+    expect(optimistic).toMatchObject({ annualRate: '0.09', color: 'chart-1' })
+  })
+
+  it('compounds the 9 % scenario, not divides it: 100.000 cents in month one is 109.000 twelve months later', () => {
+    temp.db.insert(portfolios).values({
+      id: PORTFOLIO_ID,
+      name: 'Cartera indexada',
+      currency: 'EUR',
+      horizonYears: 1,
+    }).run()
+    const weights = serialiseWeights([{ fundId: WORLD_FUND_ID, weight: 1 }])
+    temp.db.insert(funds).values({ id: WORLD_FUND_ID, isin: 'TEST0', name: 'World', providerSymbol: null, currency: 'EUR' }).run()
+    temp.db.insert(contributionRules).values([
+      { portfolioId: PORTFOLIO_ID, fromMonth: '2026-07', amount: 100_000, timing: 'start', weights },
+      { portfolioId: PORTFOLIO_ID, fromMonth: '2026-08', amount: 0, timing: 'start', weights },
+    ]).run()
+    temp.db.insert(scenarios).values({ id: 'optimistic', name: 'Escenario 2', annualRate: '0.09', color: 'chart-1', enabled: 1 }).run()
+
+    const dashboard = buildDashboard(temp.db, '2026-07-01')
+
+    const optimistic = dashboard.series.scenarios.find((s) => s.id === 'optimistic')!
+    expect(optimistic.balance[11]).toBe(109_000)
+    expect(optimistic.balance[11]).not.toBe(109_381)
+  })
+
+  it('does not project a disabled scenario', () => {
+    seedInitialData(temp.db)
+    temp.db.update(scenarios).set({ enabled: 0 }).where(eq(scenarios.id, 'flat')).run()
+
+    const dashboard = buildDashboard(temp.db, '2026-08-31')
+
+    expect(dashboard.series.scenarios).toHaveLength(2)
+    expect(dashboard.series.scenarios.map((s) => s.id)).not.toContain('flat')
+  })
+
+  it('lines every array in series up with the length of months', () => {
+    seedInitialData(temp.db)
+
+    const dashboard = buildDashboard(temp.db, '2026-08-31')
+
+    const expectedLength = dashboard.series.months.length
+    expect(dashboard.series.contributed).toHaveLength(expectedLength)
+    expect(dashboard.series.portfolio).toHaveLength(expectedLength)
+    for (const scenario of dashboard.series.scenarios) {
+      expect(scenario.balance).toHaveLength(expectedLength)
+    }
+  })
+
+  it('returns an all-zero, non-throwing dashboard for a completely empty database', () => {
+    const dashboard = buildDashboard(temp.db, '2026-08-31')
+
+    expect(dashboard.valuation.value).toBe(0)
+    expect(dashboard.xirr).toBeNull()
+    expect(dashboard.navDate).toBeNull()
+    expect(dashboard.series.months).toEqual([])
+    expect(dashboard.series.contributed).toEqual([])
+    expect(dashboard.series.portfolio).toEqual([])
+    expect(dashboard.series.scenarios).toEqual([])
+  })
+})
+
+describe('buildFundsView', () => {
+  it('returns both funds with their position, and null latestNav for one with no NAV at all', () => {
+    seedPortfolioAndFunds()
+    seedFixturePurchases()
+    insertNav(WORLD_FUND_ID, '2026-09-01', '11')
+    // No NAV at all for 'emerging'.
+
+    const views = buildFundsView(temp.db, '2026-09-15')
+
+    const world = views.find((v) => v.id === WORLD_FUND_ID)
+    expect(world).toMatchObject({
+      id: WORLD_FUND_ID,
+      isin: 'TEST0',
+      name: 'Fidelity MSCI World Index Fund EUR P Acc',
+      latestNav: { date: '2026-09-01', value: '11', source: 'manual' },
+      units: '16.000000',
+      invested: 16_000,
+      value: 17_600,
+    })
+
+    const emerging = views.find((v) => v.id === EMERGING_FUND_ID)
+    expect(emerging).toMatchObject({
+      id: EMERGING_FUND_ID,
+      latestNav: null,
+      units: '4.000000',
+      invested: 4_000,
+    })
+  })
+})
+
+describe('buildContributionsView', () => {
+  it('returns the two seeded rules, no overrides, and three months with materialised only where a purchase exists', () => {
+    seedInitialData(temp.db)
+    temp.db.insert(purchases).values({
+      portfolioId: PORTFOLIO_ID,
+      fundId: WORLD_FUND_ID,
+      month: '2026-08',
+      date: '2026-08-03',
+      amount: 16_000,
+      nav: '10',
+      units: '16.000000',
+      source: 'auto',
+    }).run()
+
+    const view = buildContributionsView(temp.db, '2026-07', '2026-09')
+
+    expect(view.rules).toHaveLength(2)
+    expect(view.overrides).toEqual([])
+    expect(view.months.map((m) => m.month)).toEqual(['2026-07', '2026-08', '2026-09'])
+    expect(view.months.map((m) => m.materialised)).toEqual([false, true, false])
+  })
+
+  it('marks a month as not materialised when no purchase row exists for it, even with an override in force', () => {
+    seedInitialData(temp.db)
+    temp.db.insert(contributionOverrides).values({
+      portfolioId: PORTFOLIO_ID,
+      month: '2026-09',
+      amount: 50_000,
+      timing: null,
+      note: 'Bono extra',
+    }).run()
+
+    const view = buildContributionsView(temp.db, '2026-07', '2026-09')
+
+    expect(view.overrides).toHaveLength(1)
+    const september = view.months.find((m) => m.month === '2026-09')
+    expect(september).toMatchObject({ amount: 50_000, materialised: false })
   })
 })
