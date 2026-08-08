@@ -10,6 +10,7 @@ import {
   formatSignedEuros,
   formatSignedPercent,
   formatUnits,
+  formatWeight,
   formatXirr,
 } from './format'
 
@@ -88,6 +89,16 @@ describe('formatRate', () => {
     expect(formatRate('0.09')).toBe('9 %')
     expect(formatRate('0')).toBe('0 %')
     expect(formatRate('0.0725')).toBe('7,25 %')
+  })
+})
+
+describe('formatWeight', () => {
+  it('renders a split weight as a percentage without trailing zeros', () => {
+    // What the contributions screen shows in place of a euro split, because
+    // the API sends weights and dividing money is `split()`'s job.
+    expect(formatWeight(0.8)).toBe('80 %')
+    expect(formatWeight(0.2)).toBe('20 %')
+    expect(formatWeight(0.125)).toBe('12,5 %')
   })
 })
 

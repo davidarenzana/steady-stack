@@ -168,6 +168,18 @@ export function formatRate(annualRate: string): string {
   return formatDecimal(RATE, annualRate)
 }
 
+/**
+ * A weight in a contribution split: `0.8` -> `'80 %'`, `0.125` -> `'12,5 %'`.
+ *
+ * Shares the `RATE` formatter with `formatRate`, so a whole percentage carries
+ * no trailing zeros. A weight is a proportion rather than money, so the
+ * `number` goes straight in — the split into exact cents is `split()`'s job on
+ * the server, and this is only the label for it.
+ */
+export function formatWeight(weight: number): string {
+  return formatNumber(RATE, weight)
+}
+
 /** Units as a decimal string, four decimals: `formatUnits('107.864100')` -> `'107,8641'`. */
 export function formatUnits(units: string): string {
   return formatDecimal(UNITS, units)

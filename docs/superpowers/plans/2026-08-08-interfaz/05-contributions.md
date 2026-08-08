@@ -18,7 +18,7 @@ Tick each task as it closes. **Commit after every task**: the main agent stages 
 the `committer` agent writes the message — no conventional-commit prefix, no co-authorship
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
-- [ ] Task 5.1 — Input parsing and weight formatting
+- [x] Task 5.1 — Input parsing and weight formatting
 - [ ] Task 5.2 — `<ContributionMonthsTable>`
 - [ ] Task 5.3 — `<RulesList>`
 - [ ] Task 5.4 — `<RuleForm>`
