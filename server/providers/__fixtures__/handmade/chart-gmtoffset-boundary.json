@@ -1,0 +1,24 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "currency": "EUR",
+          "symbol": "0P0001CLDK.F",
+          "instrumentType": "MUTUALFUND",
+          "regularMarketPrice": 14.33,
+          "gmtoffset": 7200
+        },
+        "timestamp": [1785884400],
+        "indicators": {
+          "quote": [
+            {
+              "close": [14.33]
+            }
+          ]
+        }
+      }
+    ],
+    "error": null
+  }
+}
