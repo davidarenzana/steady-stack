@@ -343,3 +343,27 @@ export function readOptionalWeights(body: unknown, field: string): Weight[] | un
   if (value === undefined || value === null) return undefined
   return readWeights(body, field)
 }
+
+/** Reads an optional month field, such as `throughMonth` on `POST /api/purchases/materialise`, `undefined` when absent or explicitly `null`, validated the same way `readMonth` validates a required one. */
+export function readOptionalMonth(body: unknown, field: string): Month | undefined {
+  const value = fieldValue(body, field)
+  if (value === undefined || value === null) return undefined
+  return readMonth(body, field)
+}
+
+/**
+ * Reads an optional array of non-empty strings, such as `fundIds` on
+ * `POST /api/nav/sync`. `undefined` when absent or explicitly `null`. An
+ * empty array is returned as-is rather than treated as absent, since
+ * `syncNavs` gives `fundIds: []` a distinct meaning — an empty array
+ * `.filter()`s every fund out, syncing none, where `undefined` syncs all
+ * of them.
+ */
+export function readOptionalStringArray(body: unknown, field: string): string[] | undefined {
+  const value = fieldValue(body, field)
+  if (value === undefined || value === null) return undefined
+  if (!Array.isArray(value) || value.some(item => typeof item !== 'string' || item.length === 0)) {
+    throw new ValidationError(`Field "${field}" must be an array of non-empty strings, received ${formatReceived(value)}`)
+  }
+  return value as string[]
+}

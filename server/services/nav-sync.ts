@@ -19,7 +19,7 @@ export interface NavSyncOptions {
 /** The outcome of syncing one fund. */
 export interface NavSyncFundResult {
   fundId: string
-  status: 'synced' | 'up-to-date' | 'skipped'
+  status: 'synced' | 'up-to-date' | 'skipped' | 'incomplete'
   reason?: 'no-symbol'
   from?: IsoDate
   to?: IsoDate
@@ -171,4 +171,68 @@ export async function syncNavs(
   }
 
   return { funds: results }
+}
+
+/** The outcome of `syncNavsWithPartialReport`: every fund it was asked about, and the message `syncNavs` threw with, if it threw. */
+export interface NavSyncOutcome {
+  funds: NavSyncFundResult[]
+  failureMessage?: string
+}
+
+/**
+ * Wraps `syncNavs` so a caller — the `POST /api/nav/sync` route, in
+ * particular — never has to treat a throw as though nothing happened.
+ *
+ * `syncNavs` deliberately finishes its loop and commits every fund ordered
+ * after a failing one before raising the first failure at the very end (see
+ * the comment on `syncNavs` itself), but the rejected promise carries no
+ * partial result to read off. What is left is the database: the NAV row
+ * count of every fund, read before the call and again after a failure, is
+ * ground truth regardless of what the promise resolved with. A fund whose
+ * count grew is reported as `'synced'` with exactly that many new rows; one
+ * that did not move is reported as `'incomplete'` — it may be the fund that
+ * actually failed, or one ordered after it that never got its turn, and
+ * there is no way to tell those two apart once the throw has already
+ * happened. This cannot recover the exact received/inserted/updated split
+ * `syncNavs` would have returned on success, only that rows did or did not
+ * land — `scripts/sync-nav.ts`'s `runSync` accepts the same limitation for
+ * the same reason.
+ *
+ * Only a `PriceProviderError` is turned into this report: that is the one
+ * failure mode `syncNavs` is documented to produce after committing partial
+ * work. Anything else — a bug in the database layer, say — propagates
+ * unchanged, so a caller's generic error handling still applies to it
+ * instead of every unrelated exception being reshaped into "a sync that
+ * partly landed".
+ */
+export async function syncNavsWithPartialReport(
+  db: AppDatabase,
+  provider: PriceProvider,
+  options: NavSyncOptions,
+): Promise<NavSyncOutcome> {
+  const funds = options.fundIds === undefined
+    ? listFunds(db)
+    : listFunds(db).filter(fund => options.fundIds!.includes(fund.id))
+  const countsBefore = new Map(funds.map(fund => [fund.id, listNavs(db, fund.id).length]))
+
+  try {
+    const result = await syncNavs(db, provider, options)
+    return { funds: result.funds }
+  }
+  catch (error) {
+    if (!(error instanceof PriceProviderError)) {
+      throw error
+    }
+
+    const partial = funds.map((fund): NavSyncFundResult => {
+      if (fund.providerSymbol === null) {
+        return { fundId: fund.id, status: 'skipped', reason: 'no-symbol' }
+      }
+      const gained = listNavs(db, fund.id).length - (countsBefore.get(fund.id) ?? 0)
+      return gained > 0
+        ? { fundId: fund.id, status: 'synced', received: gained, inserted: gained, updated: 0, skippedManual: 0 }
+        : { fundId: fund.id, status: 'incomplete' }
+    })
+    return { funds: partial, failureMessage: messageOf(error) }
+  }
 }

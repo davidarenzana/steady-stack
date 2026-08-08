@@ -7,7 +7,7 @@ import { seedInitialData, WORLD_FUND_ID, EMERGING_FUND_ID } from '../db/seed'
 import { createTempDatabase, type TempDatabase } from '../test-utils/temp-db'
 import { createFakeProvider } from '../test-utils/fake-provider'
 import { PriceProviderError } from '../providers/types'
-import { syncNavs } from './nav-sync'
+import { syncNavs, syncNavsWithPartialReport } from './nav-sync'
 
 const WORLD_SYMBOL = '0P0001CLDK.F'
 const EMERGING_SYMBOL = '0P00012I6A.F'
@@ -230,5 +230,107 @@ describe('syncNavs', () => {
     finally {
       bare.close()
     }
+  })
+})
+
+describe('syncNavsWithPartialReport', () => {
+  it('reports exactly what syncNavs reports when nothing fails', async () => {
+    const provider = createFakeProvider('yahoo', { [WORLD_SYMBOL]: WORLD, [EMERGING_SYMBOL]: EMERGING })
+
+    const outcome = await syncNavsWithPartialReport(temp.db, provider, { today: '2026-08-05' })
+
+    expect(outcome.failureMessage).toBeUndefined()
+    expect(outcome.funds.find(f => f.fundId === 'world')).toEqual({
+      fundId: 'world',
+      status: 'synced',
+      from: '2026-07-01',
+      to: '2026-08-05',
+      received: 3,
+      inserted: 3,
+      updated: 0,
+      skippedManual: 0,
+    })
+  })
+
+  it('reports the funds that committed before a later fund failed, instead of dropping them', async () => {
+    // 'emerging' sorts before 'world' alphabetically, so it fails first and
+    // 'world' is the fund ordered after it whose rows still land.
+    const failing = createFakeProvider('yahoo', { [WORLD_SYMBOL]: WORLD, [EMERGING_SYMBOL]: EMERGING })
+    const originalHistory = failing.history.bind(failing)
+    failing.history = async (symbol: string, from: string, to: string) => {
+      if (symbol === EMERGING_SYMBOL) {
+        throw new Error('network unreachable')
+      }
+      return originalHistory(symbol, from, to)
+    }
+
+    const outcome = await syncNavsWithPartialReport(temp.db, failing, { today: '2026-08-05' })
+
+    expect(outcome.failureMessage).toBe('Failed to sync fund "emerging": network unreachable')
+    expect(outcome.funds.find(f => f.fundId === 'world')).toEqual({
+      fundId: 'world',
+      status: 'synced',
+      received: 3,
+      inserted: 3,
+      updated: 0,
+      skippedManual: 0,
+    })
+    expect(outcome.funds.find(f => f.fundId === 'emerging')).toEqual({
+      fundId: 'emerging',
+      status: 'incomplete',
+    })
+  })
+
+  it('still reports a fund with no provider symbol as skipped, even when another fund fails', async () => {
+    temp.db.update(funds).set({ providerSymbol: null }).where(sql`${funds.id} = 'emerging'`).run()
+
+    const failing = createFakeProvider('yahoo', { [WORLD_SYMBOL]: WORLD })
+    failing.history = async () => {
+      throw new Error('network unreachable')
+    }
+
+    const outcome = await syncNavsWithPartialReport(temp.db, failing, { today: '2026-08-05' })
+
+    expect(outcome.failureMessage).toBe('Failed to sync fund "world": network unreachable')
+    expect(outcome.funds.find(f => f.fundId === 'emerging')).toEqual({
+      fundId: 'emerging',
+      status: 'skipped',
+      reason: 'no-symbol',
+    })
+    expect(outcome.funds.find(f => f.fundId === 'world')).toEqual({
+      fundId: 'world',
+      status: 'incomplete',
+    })
+  })
+
+  it('propagates a failure that is not a PriceProviderError unchanged, rather than reshaping it into a report', async () => {
+    // Stands in for a bug in the database layer rather than a provider
+    // outage: a trigger that fails only on INSERT lets every read syncNavs
+    // does (the counts, latestProviderNavDate) succeed, and only the write
+    // inside its transaction — outside the try/catch that wraps
+    // provider.history() into a PriceProviderError — throws SQLite's own
+    // error.
+    temp.db.run(sql`CREATE TRIGGER fail_insert BEFORE INSERT ON nav BEGIN SELECT RAISE(ABORT, 'simulated database bug'); END`)
+    const provider = createFakeProvider('yahoo', { [WORLD_SYMBOL]: WORLD, [EMERGING_SYMBOL]: EMERGING })
+
+    let caught: unknown
+    try {
+      await syncNavsWithPartialReport(temp.db, provider, { today: '2026-08-05' })
+    }
+    catch (error) {
+      caught = error
+    }
+
+    expect(caught).toBeDefined()
+    expect(caught).not.toBeInstanceOf(PriceProviderError)
+  })
+
+  it('does not duplicate rows when called twice with the same today, even through the partial-report wrapper', async () => {
+    const provider = createFakeProvider('yahoo', { [WORLD_SYMBOL]: WORLD, [EMERGING_SYMBOL]: EMERGING })
+
+    await syncNavsWithPartialReport(temp.db, provider, { today: '2026-08-05' })
+    await syncNavsWithPartialReport(temp.db, provider, { today: '2026-08-05' })
+
+    expect(countNavRows()).toBe(6)
   })
 })

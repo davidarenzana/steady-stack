@@ -16,8 +16,10 @@ import {
   readOptionalCents,
   readOptionalDecimalString,
   readOptionalIsoDate,
+  readOptionalMonth,
   readOptionalPositiveInteger,
   readOptionalString,
+  readOptionalStringArray,
   readOptionalTiming,
   readOptionalWeights,
   readPositiveDecimalString,
@@ -458,6 +460,51 @@ describe('readOptionalWeights', () => {
   it('applies the same negative-weight rejection as readWeights', () => {
     expect(() => readOptionalWeights({ weights: [{ fundId: 'world', weight: 2 }, { fundId: 'emerging', weight: -1 }] }, 'weights'))
       .toThrow(ValidationError)
+  })
+})
+
+describe('readOptionalMonth', () => {
+  it('returns the month when present', () => {
+    expect(readOptionalMonth({ throughMonth: '2026-08' }, 'throughMonth')).toBe('2026-08')
+  })
+
+  it('returns undefined when missing or null', () => {
+    expect(readOptionalMonth({}, 'throughMonth')).toBeUndefined()
+    expect(readOptionalMonth({ throughMonth: null }, 'throughMonth')).toBeUndefined()
+  })
+
+  it('applies the same format check as readMonth', () => {
+    expect(() => readOptionalMonth({ throughMonth: '2026-13' }, 'throughMonth')).toThrow(ValidationError)
+    expect(() => readOptionalMonth({ throughMonth: '2026-8' }, 'throughMonth'))
+      .toThrow('Field "throughMonth" must be a month in the format YYYY-MM, received "2026-8"')
+  })
+})
+
+describe('readOptionalStringArray', () => {
+  it('returns the array when every item is a non-empty string', () => {
+    expect(readOptionalStringArray({ fundIds: ['world', 'emerging'] }, 'fundIds')).toEqual(['world', 'emerging'])
+  })
+
+  it('returns undefined when missing or null', () => {
+    expect(readOptionalStringArray({}, 'fundIds')).toBeUndefined()
+    expect(readOptionalStringArray({ fundIds: null }, 'fundIds')).toBeUndefined()
+  })
+
+  it('returns an empty array unchanged, rather than treating it as absent', () => {
+    expect(readOptionalStringArray({ fundIds: [] }, 'fundIds')).toEqual([])
+  })
+
+  it('throws when the field is not an array', () => {
+    expect(() => readOptionalStringArray({ fundIds: 'world' }, 'fundIds'))
+      .toThrow('Field "fundIds" must be an array of non-empty strings, received "world"')
+  })
+
+  it('throws when an item is not a string', () => {
+    expect(() => readOptionalStringArray({ fundIds: ['world', 42] }, 'fundIds')).toThrow(ValidationError)
+  })
+
+  it('throws when an item is an empty string', () => {
+    expect(() => readOptionalStringArray({ fundIds: ['world', ''] }, 'fundIds')).toThrow(ValidationError)
   })
 })
 
