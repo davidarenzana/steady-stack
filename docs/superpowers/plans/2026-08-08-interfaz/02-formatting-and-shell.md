@@ -18,7 +18,7 @@ Tick each task as it closes. **Commit after every task**: the main agent stages 
 the `committer` agent writes the message — no conventional-commit prefix, no co-authorship
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
-- [ ] Task 2.1 — The `app` Vitest project becomes real
+- [x] Task 2.1 — The `app` Vitest project becomes real
 - [ ] Task 2.2 — `app/utils/format.ts`, the only place a figure becomes a string
 - [ ] Task 2.3 — The typeface decision
 - [ ] Task 2.4 — The shadcn-vue components the shell needs

@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -27,7 +28,22 @@ export default defineConfig({
         },
       },
       {
-        // Component tests. To be filled in by plan 3.
+        // Component tests. `@vue/test-utils` over happy-dom, per section 11 of
+        // the spec: no browser, no server — given a state, does the component
+        // render the right thing. Nuxt's own aliases are re-declared by hand
+        // because these files are compiled by Vitest, not by Nuxt, and for the
+        // same reason a component under test imports nothing from Nuxt: no
+        // auto-imports exist here, so every import is written out in full. A
+        // component that cannot manage that is a page, and pages are covered
+        // over HTTP in `test/routes/pages.test.ts` instead.
+        plugins: [vue()],
+        resolve: {
+          alias: {
+            '~~': fileURLToPath(new URL('.', import.meta.url)),
+            '~': fileURLToPath(new URL('./app', import.meta.url)),
+            '@': fileURLToPath(new URL('./app', import.meta.url)),
+          },
+        },
         test: {
           name: 'app',
           include: ['app/**/*.test.ts'],
