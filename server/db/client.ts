@@ -7,10 +7,17 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
 
 /**
- * Locates the Drizzle migrations directory. `import.meta.url` is the primary
- * strategy — it resolves correctly for Vitest and for `tsx`, which both run
- * this file from its own location on disk, regardless of the process's
- * working directory.
+ * Locates the Drizzle migrations directory.
+ *
+ * `STEADY_STACK_MIGRATIONS_DIR` wins when set and non-empty: this is what
+ * lets a route test point a server subprocess at the migrations folder it
+ * already resolved correctly in the parent process (see
+ * `server/test-utils/route-server.ts`), and what a `.output` production
+ * build started outside the project root would need to set explicitly.
+ *
+ * Otherwise, `import.meta.url` is the next strategy — it resolves correctly
+ * for Vitest and for `tsx`, which both run this file from its own location
+ * on disk, regardless of the process's working directory.
  *
  * It does not resolve correctly once Nitro bundles this module for `nuxt
  * dev` or `nuxt build`: rollup rewrites every `import.meta.url` in the
@@ -21,7 +28,11 @@ import * as schema from './schema'
  * been verified against a `.output` production build, where the working
  * directory at start-up is not guaranteed to be the project root.
  */
-function resolveMigrationsFolder(): string {
+export function resolveMigrationsFolder(env: NodeJS.ProcessEnv = process.env): string {
+  const configured = env.STEADY_STACK_MIGRATIONS_DIR
+  if (configured) {
+    return resolve(process.cwd(), configured)
+  }
   const bundled = fileURLToPath(new URL('./migrations', import.meta.url))
   if (existsSync(join(bundled, 'meta', '_journal.json'))) {
     return bundled

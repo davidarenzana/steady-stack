@@ -3,6 +3,32 @@ import { describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { purchases, funds, portfolios } from './schema'
 import { createTempDatabase } from '../test-utils/temp-db'
+import { MIGRATIONS_FOLDER, resolveMigrationsFolder } from './client'
+
+describe('MIGRATIONS_FOLDER', () => {
+  it('points at server/db/migrations, already applied', () => {
+    expect(MIGRATIONS_FOLDER.endsWith('server/db/migrations')).toBe(true)
+    expect(existsSync(`${MIGRATIONS_FOLDER}/meta/_journal.json`)).toBe(true)
+  })
+})
+
+describe('resolveMigrationsFolder', () => {
+  it('returns STEADY_STACK_MIGRATIONS_DIR resolved to an absolute path when set', () => {
+    const env = { STEADY_STACK_MIGRATIONS_DIR: 'somewhere/migrations' }
+    expect(resolveMigrationsFolder(env)).toBe(
+      `${process.cwd()}/somewhere/migrations`,
+    )
+  })
+
+  it('falls back to the default strategy when the variable is unset', () => {
+    expect(resolveMigrationsFolder({})).toBe(MIGRATIONS_FOLDER)
+  })
+
+  it('treats an empty string as unset', () => {
+    const env = { STEADY_STACK_MIGRATIONS_DIR: '' }
+    expect(resolveMigrationsFolder(env)).toBe(MIGRATIONS_FOLDER)
+  })
+})
 
 describe('createTempDatabase', () => {
   it('creates a migrated database outside the repository', () => {
