@@ -16,6 +16,26 @@ export interface Purchase {
 }
 
 /**
+ * Divides an amount in cents by a NAV, in units, rounded to six decimal
+ * places with `ROUND_HALF_UP`. The single place this division happens, so a
+ * purchase materialised automatically and one recorded by hand — through
+ * `POST /api/purchases` when the caller omits `units` — divide by the net
+ * asset value exactly the same way and cannot drift apart.
+ */
+export function unitsFor(amountCents: Cents, nav: string): string {
+  const navDecimal = new Decimal(nav)
+  if (navDecimal.lessThanOrEqualTo(0)) {
+    throw new Error(`NAV must be positive, received ${nav}`)
+  }
+
+  return new Decimal(amountCents)
+    .div(100)
+    .div(navDecimal)
+    .toDecimalPlaces(UNIT_DECIMALS, Decimal.ROUND_HALF_UP)
+    .toFixed(UNIT_DECIMALS)
+}
+
+/**
  * Turns a contribution into the concrete purchases that materialise it.
  *
  * The amount is split across the funds by weight first, which guarantees the
@@ -39,17 +59,13 @@ export function buildPurchases(
       throw new Error(`No NAV available for fund "${weight.fundId}" on ${date}`)
     }
 
-    const navDecimal = new Decimal(nav)
-    if (navDecimal.lessThanOrEqualTo(0)) {
+    // Checked here, not inside unitsFor, so the message can name the fund:
+    // unitsFor is generic and has no fundId to report.
+    if (new Decimal(nav).lessThanOrEqualTo(0)) {
       throw new Error(`NAV of fund "${weight.fundId}" must be positive, received ${nav}`)
     }
 
     const amount = amounts[weight.fundId]!
-    const units = new Decimal(amount)
-      .div(100)
-      .div(navDecimal)
-      .toDecimalPlaces(UNIT_DECIMALS, Decimal.ROUND_HALF_UP)
-
-    return { fundId: weight.fundId, date, amount, nav, units: units.toFixed(UNIT_DECIMALS) }
+    return { fundId: weight.fundId, date, amount, nav, units: unitsFor(amount, nav) }
   })
 }

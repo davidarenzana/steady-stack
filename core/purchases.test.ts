@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildPurchases } from './purchases'
+import { buildPurchases, unitsFor } from './purchases'
 import type { Contribution } from './types'
 
 const CONTRIBUTION: Contribution = {
@@ -66,5 +66,25 @@ describe('buildPurchases', () => {
   it('rejects a negative NAV', () => {
     expect(() => buildPurchases(CONTRIBUTION, '2026-08-03', { world: '-1', emerging: '10' }))
       .toThrow('NAV of fund "world" must be positive')
+  })
+})
+
+describe('unitsFor', () => {
+  it('divides an amount by a NAV and rounds to six decimal places', () => {
+    // 160 / 14,8321 = 10,787414…
+    expect(unitsFor(16_000, '14.8321')).toBe('10.787414')
+  })
+
+  it('rounds a repeating decimal to six places with ROUND_HALF_UP', () => {
+    // 100 € / 3 = 33,333333…
+    expect(unitsFor(10_000, '3')).toBe('33.333333')
+  })
+
+  it('rejects a NAV of zero', () => {
+    expect(() => unitsFor(16_000, '0')).toThrow('NAV must be positive, received 0')
+  })
+
+  it('rejects a negative NAV', () => {
+    expect(() => unitsFor(16_000, '-1')).toThrow('NAV must be positive, received -1')
   })
 })

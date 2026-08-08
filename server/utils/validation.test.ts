@@ -1,13 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import { ValidationError } from './errors'
 import {
+  hasField,
   readBoolean,
   readCents,
   readDecimalString,
+  readIntegerRouteParam,
   readIsoDate,
+  readIsoDateNotAfter,
   readMonth,
+  readMonthRouteParam,
+  readNonEmptyString,
   readNullableCents,
+  readOptionalBoolean,
+  readOptionalCents,
+  readOptionalDecimalString,
+  readOptionalIsoDate,
+  readOptionalPositiveInteger,
   readOptionalString,
+  readOptionalTiming,
+  readOptionalWeights,
+  readPositiveDecimalString,
+  readRouteParam,
   readString,
   readTiming,
   readWeights,
@@ -210,6 +224,240 @@ describe('readWeights', () => {
 
   it('throws when an item has a non-numeric weight', () => {
     expect(() => readWeights({ weights: [{ fundId: 'world', weight: '1' }] }, 'weights')).toThrow(ValidationError)
+  })
+
+  it('throws with the exact message for a negative weight, even when the split still sums to 1', () => {
+    // -1 + 2 = 1: the sum check alone would let this through.
+    expect(() => readWeights({ weights: [{ fundId: 'world', weight: -1 }, { fundId: 'emerging', weight: 2 }] }, 'weights'))
+      .toThrow('Field "weights[0].weight" must be a number greater than 0 and at most 1, received -1')
+  })
+
+  it('rejects a weight of exactly zero', () => {
+    expect(() => readWeights({ weights: [{ fundId: 'world', weight: 0 }, { fundId: 'emerging', weight: 1 }] }, 'weights'))
+      .toThrow('Field "weights[0].weight" must be a number greater than 0 and at most 1, received 0')
+  })
+
+  it('rejects a weight above 1', () => {
+    expect(() => readWeights({ weights: [{ fundId: 'world', weight: 1.5 }, { fundId: 'emerging', weight: -0.5 }] }, 'weights'))
+      .toThrow('Field "weights[0].weight" must be a number greater than 0 and at most 1, received 1.5')
+  })
+
+  it('accepts a single fund at weight 1', () => {
+    expect(readWeights({ weights: [{ fundId: 'world', weight: 1 }] }, 'weights'))
+      .toEqual([{ fundId: 'world', weight: 1 }])
+  })
+
+  it('rejects an empty fundId', () => {
+    expect(() => readWeights({ weights: [{ fundId: '', weight: 1 }] }, 'weights')).toThrow(ValidationError)
+  })
+
+  it('throws with the exact message when the same fundId appears twice', () => {
+    expect(() => readWeights({ weights: [{ fundId: 'world', weight: 0.5 }, { fundId: 'world', weight: 0.5 }] }, 'weights'))
+      .toThrow('Field "weights" cannot repeat fundId "world"')
+  })
+})
+
+describe('readNonEmptyString', () => {
+  it('returns the field when it is a non-empty string', () => {
+    expect(readNonEmptyString({ fundId: 'world' }, 'fundId')).toBe('world')
+  })
+
+  it('throws when the field is missing', () => {
+    expect(() => readNonEmptyString({}, 'fundId')).toThrow('Field "fundId" is required')
+  })
+
+  it('throws with the exact message for an empty string', () => {
+    expect(() => readNonEmptyString({ fundId: '' }, 'fundId'))
+      .toThrow('Field "fundId" must not be an empty string')
+  })
+
+  it('throws when the field is not a string', () => {
+    expect(() => readNonEmptyString({ fundId: 42 }, 'fundId'))
+      .toThrow('Field "fundId" must be a string, received 42')
+  })
+})
+
+describe('readOptionalPositiveInteger', () => {
+  it('returns the field when it is a positive integer', () => {
+    expect(readOptionalPositiveInteger({ horizonYears: 10 }, 'horizonYears')).toBe(10)
+  })
+
+  it('returns undefined when the field is missing or null', () => {
+    expect(readOptionalPositiveInteger({}, 'horizonYears')).toBeUndefined()
+    expect(readOptionalPositiveInteger({ horizonYears: null }, 'horizonYears')).toBeUndefined()
+  })
+
+  it('throws on zero, negative or fractional', () => {
+    expect(() => readOptionalPositiveInteger({ horizonYears: 0 }, 'horizonYears')).toThrow(ValidationError)
+    expect(() => readOptionalPositiveInteger({ horizonYears: -5 }, 'horizonYears')).toThrow(ValidationError)
+    expect(() => readOptionalPositiveInteger({ horizonYears: 2.5 }, 'horizonYears')).toThrow(ValidationError)
+  })
+})
+
+describe('readIsoDateNotAfter', () => {
+  it('returns the date when it is on or before the bound', () => {
+    expect(readIsoDateNotAfter({ date: '2026-08-07' }, 'date', '2026-08-07')).toBe('2026-08-07')
+    expect(readIsoDateNotAfter({ date: '2026-08-01' }, 'date', '2026-08-07')).toBe('2026-08-01')
+  })
+
+  it('throws with the exact message for a date after the bound', () => {
+    expect(() => readIsoDateNotAfter({ date: '2026-09-01' }, 'date', '2026-08-07'))
+      .toThrow('Field "date" cannot be later than 2026-08-07, received "2026-09-01"')
+  })
+})
+
+describe('readPositiveDecimalString', () => {
+  it('returns the field when it is a positive decimal string', () => {
+    expect(readPositiveDecimalString({ value: '14.8321' }, 'value')).toBe('14.8321')
+  })
+
+  it('throws with the exact message for zero', () => {
+    expect(() => readPositiveDecimalString({ value: '0' }, 'value'))
+      .toThrow('Field "value" must be a positive decimal, received "0"')
+  })
+
+  it('throws for a negative decimal', () => {
+    expect(() => readPositiveDecimalString({ value: '-1.5' }, 'value')).toThrow(ValidationError)
+  })
+})
+
+describe('hasField', () => {
+  it('is true when the body carries the field, even set to null', () => {
+    expect(hasField({ fromMonth: '2026-01' }, 'fromMonth')).toBe(true)
+    expect(hasField({ fromMonth: null }, 'fromMonth')).toBe(true)
+  })
+
+  it('is false when the field is absent or the body is not an object', () => {
+    expect(hasField({}, 'fromMonth')).toBe(false)
+    expect(hasField(undefined, 'fromMonth')).toBe(false)
+    expect(hasField(null, 'fromMonth')).toBe(false)
+  })
+})
+
+describe('readRouteParam', () => {
+  it('returns the value when present', () => {
+    expect(readRouteParam('world', 'id')).toBe('world')
+  })
+
+  it('throws when the value is missing or empty', () => {
+    expect(() => readRouteParam(undefined, 'id')).toThrow('Route parameter "id" is required')
+    expect(() => readRouteParam('', 'id')).toThrow('Route parameter "id" is required')
+  })
+})
+
+describe('readIntegerRouteParam', () => {
+  it('returns the value as a number', () => {
+    expect(readIntegerRouteParam('42', 'id')).toBe(42)
+  })
+
+  it('throws for a non-integer, negative or missing value', () => {
+    expect(() => readIntegerRouteParam('abc', 'id')).toThrow(ValidationError)
+    expect(() => readIntegerRouteParam('-1', 'id')).toThrow(ValidationError)
+    expect(() => readIntegerRouteParam('1.5', 'id')).toThrow(ValidationError)
+    expect(() => readIntegerRouteParam(undefined, 'id')).toThrow(ValidationError)
+  })
+})
+
+describe('readMonthRouteParam', () => {
+  it('returns the value when it matches YYYY-MM', () => {
+    expect(readMonthRouteParam('2026-08', 'month')).toBe('2026-08')
+  })
+
+  it('throws for a malformed month', () => {
+    expect(() => readMonthRouteParam('2026-8', 'month')).toThrow(ValidationError)
+    expect(() => readMonthRouteParam(undefined, 'month')).toThrow(ValidationError)
+  })
+})
+
+describe('readOptionalCents', () => {
+  it('returns the integer when present', () => {
+    expect(readOptionalCents({ amount: 500 }, 'amount')).toBe(500)
+  })
+
+  it('returns undefined when missing or null', () => {
+    expect(readOptionalCents({}, 'amount')).toBeUndefined()
+    expect(readOptionalCents({ amount: null }, 'amount')).toBeUndefined()
+  })
+
+  it('throws for a non-integer', () => {
+    expect(() => readOptionalCents({ amount: 1.5 }, 'amount')).toThrow(ValidationError)
+  })
+})
+
+describe('readOptionalDecimalString', () => {
+  it('returns the string when present', () => {
+    expect(readOptionalDecimalString({ nav: '14.8321' }, 'nav')).toBe('14.8321')
+  })
+
+  it('returns undefined when missing or null', () => {
+    expect(readOptionalDecimalString({}, 'nav')).toBeUndefined()
+    expect(readOptionalDecimalString({ nav: null }, 'nav')).toBeUndefined()
+  })
+
+  it('throws when it is a JSON number instead of a string', () => {
+    expect(() => readOptionalDecimalString({ nav: 14.8 }, 'nav')).toThrow(ValidationError)
+  })
+})
+
+describe('readOptionalIsoDate', () => {
+  it('returns the date when present', () => {
+    expect(readOptionalIsoDate({ date: '2026-08-03' }, 'date')).toBe('2026-08-03')
+  })
+
+  it('returns undefined when missing or null', () => {
+    expect(readOptionalIsoDate({}, 'date')).toBeUndefined()
+    expect(readOptionalIsoDate({ date: null }, 'date')).toBeUndefined()
+  })
+
+  it('throws for a malformed date', () => {
+    expect(() => readOptionalIsoDate({ date: '2026-02-30' }, 'date')).toThrow(ValidationError)
+  })
+})
+
+describe('readOptionalTiming', () => {
+  it('returns the value when present', () => {
+    expect(readOptionalTiming({ timing: 'end' }, 'timing')).toBe('end')
+  })
+
+  it('returns undefined when missing or null', () => {
+    expect(readOptionalTiming({}, 'timing')).toBeUndefined()
+    expect(readOptionalTiming({ timing: null }, 'timing')).toBeUndefined()
+  })
+
+  it('throws for an invalid value', () => {
+    expect(() => readOptionalTiming({ timing: 'middle' }, 'timing')).toThrow(ValidationError)
+  })
+})
+
+describe('readOptionalBoolean', () => {
+  it('returns the value when present', () => {
+    expect(readOptionalBoolean({ enabled: false }, 'enabled')).toBe(false)
+  })
+
+  it('returns undefined when missing or null', () => {
+    expect(readOptionalBoolean({}, 'enabled')).toBeUndefined()
+    expect(readOptionalBoolean({ enabled: null }, 'enabled')).toBeUndefined()
+  })
+
+  it('throws when the field is not a boolean', () => {
+    expect(() => readOptionalBoolean({ enabled: 'true' }, 'enabled')).toThrow(ValidationError)
+  })
+})
+
+describe('readOptionalWeights', () => {
+  it('returns the weights when present and valid', () => {
+    expect(readOptionalWeights({ weights: [{ fundId: 'world', weight: 1 }] }, 'weights'))
+      .toEqual([{ fundId: 'world', weight: 1 }])
+  })
+
+  it('returns undefined when missing or null', () => {
+    expect(readOptionalWeights({}, 'weights')).toBeUndefined()
+    expect(readOptionalWeights({ weights: null }, 'weights')).toBeUndefined()
+  })
+
+  it('applies the same negative-weight rejection as readWeights', () => {
+    expect(() => readOptionalWeights({ weights: [{ fundId: 'world', weight: 2 }, { fundId: 'emerging', weight: -1 }] }, 'weights'))
+      .toThrow(ValidationError)
   })
 })
 
