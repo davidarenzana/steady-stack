@@ -24,7 +24,7 @@ line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 - [x] Task 3.4 — `<PortfolioSummary>`, and the three interface requirements of spec section 11
 - [x] Task 3.5 — `<FundPositionsTable>`
 - [x] Task 3.6 — The dashboard page
-- [ ] Task 3.7 — The dashboard renders against a real database
+- [x] Task 3.7 — The dashboard renders against a real database
 
 ---
 

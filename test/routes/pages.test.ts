@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fetch } from '@nuxt/test-utils/e2e'
+import { insertPurchase, upsertNav } from '../../server/db/queries'
 import { setupRouteServer } from '../../server/test-utils/route-server'
 
 /**
@@ -16,7 +17,7 @@ import { setupRouteServer } from '../../server/test-utils/route-server'
  * `fetch` and not `$fetch`: the response is HTML, and `$fetch` would try to
  * parse it as JSON.
  */
-await setupRouteServer()
+const database = await setupRouteServer()
 
 /** The four routes, with the Spanish heading each one must render. */
 const SCREENS = [
@@ -71,5 +72,96 @@ describe('the four screens', () => {
     const response = await fetch('/no-existe')
 
     expect(response.status).toBe(404)
+  })
+})
+
+/**
+ * The dashboard, against the real database.
+ *
+ * **Order matters in this block.** Every `it` shares one server and one
+ * SQLite file, and Vitest runs them in declaration order, so the empty-state
+ * assertions have to come before the test that arranges purchases — once the
+ * rows exist there is no way back to an empty portfolio.
+ */
+describe('the dashboard', () => {
+  it('shows the designed empty state on a database with no purchases', async () => {
+    // What a clean checkout renders. The seed gives two contribution rules and
+    // nothing else, so the screen has to say what to do next rather than
+    // reporting that the portfolio is worth nothing.
+    const html = await (await fetch('/')).text()
+
+    expect(html).toContain('Todavía no hay nada que valorar')
+    expect(html).toContain('Elige el símbolo de cada fondo')
+    expect(html).toContain('Descarga los valores liquidativos')
+    expect(html).toContain('Materializa las aportaciones')
+
+    // Section 11 of the spec: neither a blank figure nor a NaN. A zero would
+    // be a claim rather than the absence it actually is.
+    expect(html).not.toContain('NaN')
+    expect(html).not.toContain('0,00 €')
+  })
+
+  it('shows the portfolio figures once there are purchases', async () => {
+    // Arranged through the database handle rather than over HTTP: this is
+    // state the screen reads, not behaviour of the write routes, which
+    // test/routes/purchases.test.ts already covers.
+    //
+    // Two NAV dates per fund so the valuation has a later price than the
+    // purchase: 160 units of `world` at 11 € is 1.760 €, and 20 of
+    // `emerging` at 22 € is 440 €, so the portfolio is worth 2.200,00 €
+    // against 2.000,00 € paid in — a gain of +200,00 € and +10,00 %, valued
+    // with data from 03/08/2026.
+    for (const [fundId, date, value] of [
+      ['world', '2026-07-01', '10'],
+      ['emerging', '2026-07-01', '20'],
+      ['world', '2026-08-03', '11'],
+      ['emerging', '2026-08-03', '22'],
+    ] as const) {
+      upsertNav(database.db, { fundId, date, value, source: 'manual' })
+    }
+
+    insertPurchase(database.db, {
+      fundId: 'world',
+      month: '2026-07',
+      date: '2026-07-01',
+      amount: 160000,
+      nav: '10',
+      units: '160.000000',
+      source: 'manual',
+    })
+    insertPurchase(database.db, {
+      fundId: 'emerging',
+      month: '2026-07',
+      date: '2026-07-01',
+      amount: 40000,
+      nav: '20',
+      units: '20.000000',
+      source: 'manual',
+    })
+
+    const html = await (await fetch('/')).text()
+
+    expect(html).toContain('2.200,00 €')
+    expect(html).toContain('2.000,00 €')
+    expect(html).toContain('+200,00 €')
+    expect(html).toContain('+10,00 %')
+    expect(html).toContain('Valorado con datos del 03/08/2026')
+    expect(html).not.toContain('NaN')
+
+    // The empty state is gone, and the positions table has taken its place.
+    expect(html).not.toContain('Todavía no hay nada que valorar')
+    expect(html).toContain('Posiciones')
+    expect(html).toContain('Participaciones')
+    expect(html).toContain('160,0000')
+  })
+
+  it('renders the figures with tabular numerals in the served HTML', async () => {
+    // Asserted here and not only in the component tests: a class that exists
+    // on a mounted component but never reaches the server-rendered markup
+    // would leave the column of figures misaligned on first paint, which is
+    // the one paint a server-rendered page is judged on.
+    const html = await (await fetch('/')).text()
+
+    expect(html).toMatch(/class="[^"]*tabular-nums/)
   })
 })
