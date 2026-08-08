@@ -19,7 +19,7 @@ line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
 - [ ] Task 1.1 — The database file and the migrations folder come from the environment
 - [ ] Task 1.2 — The route-test harness and a smoke test
-- [ ] Task 1.3 — Portfolio and dashboard routes (1, 2, 3)
+- [x] Task 1.3 — Portfolio and dashboard routes (1, 2, 3)
 - [ ] Task 1.4 — Funds routes (4, 5, 6, 7, 8)
 - [ ] Task 1.5 — `PATCH /api/funds/:id` can clear `providerSymbol` back to `null`
 - [ ] Task 1.6 — NAV routes (9, 10, 11)
