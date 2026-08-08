@@ -16,8 +16,9 @@ pnpm test core/rates.test.ts    # a single test file
 pnpm test -t 'largest remainder'  # a single test by name
 ```
 
-Vitest runs two projects (`vitest.config.ts`): `core` on the `node` environment, `app` on
-`happy-dom`. `pnpm test --project core` restricts a run to the engine.
+Vitest runs three projects (`vitest.config.ts`): `core` and `server` on the `node` environment,
+`app` on `happy-dom`. `pnpm test --project core` restricts a run to the engine, `--project server`
+to the integration tests over a temporary SQLite file.
 
 ## Architecture
 
