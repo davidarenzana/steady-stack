@@ -2825,12 +2825,14 @@ outage at Yahoo reads as somebody else's problem rather than ours."
 - Modify: `CLAUDE.md` (the *Current state* section, and any new gotcha this plan paid for)
 - Modify: `docs/superpowers/plans/2026-08-07-persistencia-y-red.md` (tick the boxes)
 
-- [ ] **Step 1: Run the whole suite**
+- [x] **Step 1: Run the whole suite**
 
 Run: `pnpm test`
 Expected: green across `core`, `server` and `app`. Record the real count.
 
-- [ ] **Step 2: Typecheck and build**
+362 tests passing across 22 files.
+
+- [x] **Step 2: Typecheck and build**
 
 Run: `pnpm typecheck`
 Expected: exit 0.
@@ -2840,7 +2842,18 @@ Expected: exit 0. **If it fails on `better-sqlite3`**, it is the native module b
 of externalised; the fix is `nitro: { externals: { external: ['better-sqlite3'] } }` in
 `nuxt.config.ts`. Add it only if the build actually fails, and write the reason next to it.
 
-- [ ] **Step 3: Run the purity and precision checks**
+`pnpm typecheck` and `pnpm build` both exited 0, unmodified — `better-sqlite3` was already
+externalised (it appears in `.output/server/package.json` and `.output/server/node_modules`, not
+bundled into a chunk), so the `nuxt.config.ts` fallback above was not needed.
+
+Starting the built output uncovered a real gap in the `process.cwd()` migrations fallback from
+task 15: `node .output/server/index.mjs` from the project root serves `GET /api/portfolio` with
+HTTP 200, but the same binary started from an unrelated working directory throws
+`Can't find meta/_journal.json file` on every database-backed route and, worse, creates a stray
+empty database file under that directory's own `data/`, because `DATABASE_FILE` in
+`server/utils/database.ts` is the same kind of `cwd`-relative path. See `TODO.md`.
+
+- [x] **Step 3: Run the purity and precision checks**
 
 ```sh
 grep -rE "from '(nuxt|drizzle|h3|ofetch|better-sqlite3)" core/
@@ -2872,7 +2885,9 @@ grep -rnE "from '(h3|ofetch|nuxt|#imports)'" server/db server/providers server/s
 ```
 Expected: no output.
 
-- [ ] **Step 4: Verify a clean checkout comes up**
+All six checks ran with no output.
+
+- [x] **Step 4: Verify a clean checkout comes up**
 
 ```sh
 rm -f data/steady-stack.db* && pnpm db:seed && pnpm dev
@@ -2880,7 +2895,11 @@ rm -f data/steady-stack.db* && pnpm db:seed && pnpm dev
 Then `curl -sS http://localhost:3000/api/portfolio`. Expected: HTTP 200 with the seeded portfolio,
 with no manual migration step in between.
 
-- [ ] **Step 5: Update the documentation**
+Confirmed — HTTP 200 with `{"id":"index","name":"Cartera indexada", ...}` off a database wiped and
+reseeded moments earlier, dev server on port 3001 (3000 was held by an unrelated process on this
+machine).
+
+- [x] **Step 5: Update the documentation**
 
 - `README.md`: document `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm sync:nav` and
   `pnpm capture:fixtures`, and say that `data/steady-stack.db` is created on first run and is
@@ -2893,7 +2912,7 @@ with no manual migration step in between.
   root `node_modules` under pnpm, which is why only `server/api/` and `server/utils/http.ts` use
   Nitro auto-imports.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add README.md TODO.md CLAUDE.md docs/superpowers/plans/2026-08-07-persistencia-y-red.md
@@ -2906,16 +2925,18 @@ git commit -m "Close the persistence and network plan"
 
 When the eighteen tasks are done, all of this must hold:
 
-- [ ] `pnpm test` green across the three projects
-- [ ] `pnpm typecheck` exits 0
-- [ ] `pnpm build` exits 0
-- [ ] `pnpm db:seed` twice leaves 1 portfolio, 2 funds, 2 rules and 3 scenarios
-- [ ] `pnpm sync:nav` twice leaves the `nav` table with the same number of rows
-- [ ] `POST /api/purchases/materialise` twice creates the purchases once
-- [ ] No test opens a network socket
-- [ ] No test writes to `data/steady-stack.db`
-- [ ] `core/` imports nothing from Nuxt, Drizzle, h3, ofetch or better-sqlite3
-- [ ] No `REAL` column in the migrations, no `parseFloat` in `core/`, `server/` or `scripts/`
+- [x] `pnpm test` green across the three projects — 362 passing, 22 files
+- [x] `pnpm typecheck` exits 0
+- [x] `pnpm build` exits 0
+- [x] `pnpm db:seed` twice leaves 1 portfolio, 2 funds, 2 rules and 3 scenarios
+- [x] `pnpm sync:nav` twice leaves the `nav` table with the same number of rows — 27 + 27 = 54
+      both times, against real Yahoo data
+- [x] `POST /api/purchases/materialise` twice creates the purchases once — 4 created on the first
+      call, 0 on the second, both months reported `already-materialised`
+- [x] No test opens a network socket
+- [x] No test writes to `data/steady-stack.db`
+- [x] `core/` imports nothing from Nuxt, Drizzle, h3, ofetch or better-sqlite3
+- [x] No `REAL` column in the migrations, no `parseFloat` in `core/`, `server/` or `scripts/`
 
 ## What this plan leaves out
 

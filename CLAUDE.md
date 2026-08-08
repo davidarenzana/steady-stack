@@ -140,6 +140,21 @@ hand-wrapped at 80 columns saying *why*, with the numbers when numbers justify i
   generates `cssVars: {}` empty for the `vega` style, leaving `bg-background` and `border-border`
   undeclared and breaking the build. Running the CLI with `--force` will overwrite it.
 - Icons come from **`@lucide/vue`**, not the deprecated `lucide-vue-next`.
+- **`foreign_keys` has to be turned on per SQLite connection.** It defaults to off; `openDatabase`
+  in `server/db/client.ts` runs `PRAGMA foreign_keys = ON` right after opening, or a purchase could
+  reference a fund that does not exist.
+- **`h3` is not resolvable from the root `node_modules` under pnpm** — pnpm's strict, non-flat
+  layout means a file outside Nitro's own dependency tree cannot `import` it directly, only through
+  Nitro's auto-imports. That is why `defineEventHandler`, `createError` and the rest are used only
+  under `server/api/` and in `server/utils/http.ts`, and why every other `server/` module — the
+  database client, the providers, the services — takes plain values in and returns plain values or
+  throws plain `Error` subclasses, leaving the H3 translation to the one file that touches it.
+- **`server/db/client.ts`'s `process.cwd()` migrations fallback works for `nuxt dev` and for a
+  `.output` build started from the project root, but not from anywhere else.** Verified while
+  closing plan 2: `node .output/server/index.mjs` served `GET /api/portfolio` with HTTP 200 from
+  the project root, and failed with `Can't find meta/_journal.json file` — plus a stray empty
+  database file written under the wrong `data/` — when started from an unrelated directory. Nothing
+  yet pins the working directory a deployed process starts from.
 
 ## Current state
 
@@ -149,15 +164,24 @@ rate conversion, month arithmetic, contribution expansion, scenario projection, 
 valuation and XIRR.
 
 [Plan 2](docs/superpowers/plans/2026-08-07-persistencia-y-red.md), persistence and the network, is
-written: 18 tasks over 5 phases. **Phase 1 of 5 is done** — `core/dates.ts`, the Drizzle schema for
-the seven tables, the SQLite client, a temp-database helper, the row↔domain mappers and typed
-queries, and the seeded initial data of section 13 of the spec. 140 tests passing across three
-Vitest projects.
+**complete: all 18 tasks over 5 phases.** The Drizzle schema for the seven tables, the SQLite
+client, the row↔domain mappers and typed queries, the seeded initial data of section 13 of the
+spec, the `PriceProvider` interface and the Yahoo implementation over recorded fixtures, idempotent
+NAV sync and materialisation into frozen purchases, the read model that produces the exact figures
+a dashboard would render, and all 26 Nitro routes. 362 tests passing across three Vitest projects,
+none of them opening a network socket. `pnpm typecheck` and `pnpm build` both exit 0, and the built
+`.output` was started and curled for real against `GET /api/portfolio`.
 
-Nothing talks to the network yet: the `PriceProvider` interface and the Yahoo implementation are
-phase 2, the sync and materialisation phase 3, the read model phase 4 and the Nitro routes phase 5.
-No Vue page exists — the interface is plan 3, still unwritten. `TODO.md` holds the open threads.
+The HTTP layer itself has no automated coverage — 26 route files, 0 route test files, every one
+verified by hand with `curl` while implementing plan 2. Route tests with `@nuxt/test-utils` are
+phase 1 of plan 3, not an afterthought; see `TODO.md`.
 
-Three commands exist for the database: `pnpm db:generate`, `pnpm db:migrate` and `pnpm db:seed`.
-The seed is idempotent. `pnpm test --project server` runs the integration tests alone; they use a
-temporary SQLite file under `os.tmpdir()` and never touch `data/steady-stack.db`.
+No Vue page exists — the interface is plan 3, still unwritten. `TODO.md` holds the open threads,
+including the gap task 18 found in the `process.cwd()` migrations fallback under a production
+build started from outside the project root.
+
+Four commands exist for the database: `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:seed` and
+`pnpm sync:nav`. The seed is idempotent, and so is a sync rerun — verified by running it twice in a
+row against the real Yahoo API with no change in row count. `pnpm test --project server` runs the
+integration tests alone; they use a temporary SQLite file under `os.tmpdir()` and never touch
+`data/steady-stack.db`.

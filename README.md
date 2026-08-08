@@ -17,7 +17,7 @@ different price.
 
 The calculation engine was built first and tested in isolation, before any database or interface
 existed. That is where the risk lives: a misrounded cent compounds across 300 months of projection.
-The persistence layer is going in underneath it now.
+Persistence and the network are done; the interface is next.
 
 | | |
 |---|---|
@@ -30,12 +30,14 @@ The persistence layer is going in underneath it now.
 | NAV download from Yahoo | done |
 | Idempotent sync and materialisation into purchases | done |
 | Valuation, XIRR and scenario projection off the database | done |
-| Nitro API routes | pending |
+| Nitro API routes | done |
 | Interface | pending |
 
-219 tests passing, none of which opens a network socket. `pnpm sync:nav` downloads real net asset
-values and the read model produces the figures a dashboard would render; there is no interface yet,
-so there is nothing to open in a browser.
+362 tests passing, none of which opens a network socket. All 26 Nitro routes exist — portfolio,
+funds, contribution rules and overrides, purchases, NAV entry and sync, materialisation, scenarios
+and the dashboard read model — and were verified by hand with `curl`; there is no automated
+coverage of the HTTP layer yet, which is the first thing the next plan adds. There is no interface
+yet either, so there is nothing to open in a browser except the raw JSON each route returns.
 
 ## Getting started
 
@@ -58,15 +60,27 @@ pnpm db:generate    # generate a migration from the Drizzle schema
 pnpm db:migrate     # apply pending migrations
 pnpm db:seed        # write the initial portfolio; idempotent, run it as often as you like
 pnpm sync:nav       # download the missing NAVs from Yahoo; --materialise turns due months into purchases
+pnpm capture:fixtures  # record fresh Yahoo responses under server/providers/__fixtures__/recorded
 ```
 
-The database is a single file, `data/steady-stack.db`, and it is git-ignored. `pnpm db:seed` creates
-it and fills in the portfolio, its two funds, the contribution rules and the scenarios.
+The database is a single file, `data/steady-stack.db`, and it is created on first run — `pnpm dev`
+or any of the commands above apply pending migrations automatically, so no manual migration step
+sits between a clean checkout and a working server. The file is git-ignored; delete it and reseed
+whenever you want to start over.
+
+`pnpm db:generate` reads the Drizzle schema in `server/db/schema.ts` and writes a new migration
+file under `server/db/migrations/` when it has changed; `pnpm db:migrate` applies whatever is
+pending. `pnpm db:seed` writes the initial portfolio and fills in its two funds, the contribution
+rules and the scenarios; it is idempotent, so running it again changes nothing.
 
 `pnpm sync:nav` asks Yahoo Finance only for the days missing since the last run, so it is safe to run
 as often as wanted: a same-day rerun asks the provider for nothing and changes nothing. A fund with no
 `provider_symbol` set is reported as skipped rather than queried. Add `--materialise` to also turn
 every contribution month that has arrived into stored purchases, once its funds have a NAV to buy at.
+
+`pnpm capture:fixtures` re-downloads the real Yahoo responses the provider's tests replay offline,
+under `server/providers/__fixtures__/recorded/`. Only needed when adding a fund with a new provider
+symbol or when Yahoo's response shape changes; the test suite never touches the network itself.
 
 ## Project structure
 
@@ -103,7 +117,7 @@ overstates the result by 14.415 €. The correct rate is 0,7207 %, which turns 1
 - [`docs/superpowers/plans/2026-08-06-motor-de-calculo.md`](docs/superpowers/plans/2026-08-06-motor-de-calculo.md)
   — the implementation plan for the calculation engine, complete
 - [`docs/superpowers/plans/2026-08-07-persistencia-y-red.md`](docs/superpowers/plans/2026-08-07-persistencia-y-red.md)
-  — the implementation plan for persistence and the network, phases 1 to 4 of 5 complete
+  — the implementation plan for persistence and the network, complete
 
 ## Conventions
 

@@ -4,33 +4,58 @@ Open threads, so none of this has to be reconstructed from memory.
 
 ## Next up
 
-**Plan 2, phase 5 — the Nitro routes.** Tasks 14 to 18 of
-[the plan](docs/superpowers/plans/2026-08-07-persistencia-y-red.md), the last five of eighteen: the
-HTTP plumbing that turns domain errors into H3 errors, then the read, write and action routes, then
-the closing verification. The 26 routes are already tabulated in the plan with their request and
-response shapes, and phase 3 of plan 3 will be written against that table, so it is not to be
-changed casually.
+**Plan 2 is closed** — all eighteen tasks over five phases: the database and its seeded portfolio,
+the Yahoo provider over recorded fixtures, idempotent NAV sync, materialisation into frozen
+purchases, the read model, and all 26 Nitro routes. 362 tests passing, none of them opening a
+network socket. `pnpm typecheck` and `pnpm build` both exit 0, and a real `.output` build was
+started and curled — see *Findings this plan leaves for plan 3*, below, for the one gap that
+uncovered.
 
-**Phases 1 to 4 are done** — commits `0c4882e..3ffb298`, 219 tests green, none of them opening a
-network socket. The database and its seeded portfolio, the Yahoo provider over recorded fixtures,
-idempotent NAV sync, materialisation into frozen purchases, and the read model that produces the
-exact figures the dashboard will render.
+**Plan 3 is the interface**, not written yet. There is still nothing to open in a browser except
+raw JSON. Its opening phase must be route tests, not screens:
 
-Then plan 3, the interface, which is not written yet. There is still nothing to open in a browser.
+**Route tests are phase 1 of plan 3, not an afterthought.** The count is exact: **26 route files,
+0 route test files.** The whole HTTP layer — every handler under `server/api/` — has no automated
+coverage. Every one of them was verified by hand with `curl` while implementing plan 2, which is
+what that plan's own ending condition asked for, but "verified once by a human" and "covered by a
+test suite" are not the same claim, and only the second one survives a refactor. `@nuxt/test-utils`
+is already a devDependency; its e2e mode resolves `h3` by running a real Nuxt server, which is
+exactly the resolution problem that confined Nitro auto-imports to `server/api/` and
+`server/utils/http.ts` throughout plan 2 (see *Gotchas already paid for* in `CLAUDE.md`). Write the
+route tests against that real server, not against the handlers in isolation.
 
-### Carry these into task 14
+## Findings this plan leaves for plan 3
 
-- **`NotFoundError` is defined inside `server/services/read-model.ts`.** The plan puts it in
-  `server/utils/errors.ts` beside `ValidationError` and `ConflictError`. Task 14 must **move** it,
-  not define a second one.
-- **`syncNavs` can partially succeed and then throw.** Task 9 made it finish its loop after a
-  provider failure so the funds ordered after the failing one still commit, then throw. The sync
-  route must report what did land rather than treating the throw as nothing having happened.
-- **`buildFundsView` returns `value: 0` for a fund that holds units but has no NAV**, rather than
-  throwing the way `currentValuation` does for the same situation. It is deliberate — one unrated
-  fund should not 404 the whole funds screen — and the consumer distinguishes the cases through
-  `latestNav: null`. Only the no-purchases case is tested. If the interface ever sums `value`
-  across funds it will silently under-count, so plan 3 needs to know.
+Deliberate gaps and deferred fixes, so plan 3 inherits them as decisions rather than rediscovering
+them as surprises.
+
+- **`PATCH /api/funds/:id` cannot clear `providerSymbol` back to `null`.** The funds screen needs
+  that to undo a wrong symbol choice.
+- **Purchase and rule amounts still accept zero and negative values.** No validation rejects them.
+- **Scenario `color` is not restricted** to the `chart-1` … `chart-5` tokens the theme declares.
+- **Fund `currency` accepts an empty string.**
+- **`purchases.date` is not future-bounded**, though `nav.date` is.
+- **`buildFundsView` reports a fund holding units with no NAV as worth `0`**, distinguishable only
+  through `latestNav: null`. If the interface ever sums `value` across funds it will silently
+  under-count. (Carried over from phase 4 — see below.)
+- **`@types/better-sqlite3` resolves to `9.6.0`** against the runtime `13.0.3`; no `13.x` types are
+  published, so any method added since 9.6.0 is silently typed `any`.
+- **`server/db/client.ts`'s `process.cwd()` migrations fallback has a real gap**, found while
+  closing this plan: `node .output/server/index.mjs` works from the project root (verified with
+  `curl` against `GET /api/portfolio`, HTTP 200) but throws `Can't find meta/_journal.json file` on
+  every database-backed route when started from any other working directory — and
+  `DATABASE_FILE` in `server/utils/database.ts` is the same kind of `cwd`-relative path, so it also
+  silently creates a stray, empty database file under that directory's own `data/` before the
+  migration lookup fails. Nothing in this plan pins the working directory a deployed process starts
+  from, so this is live risk, not a hypothetical — whatever launches the production server must
+  `cd` to the project root first, or both paths need to resolve some other way.
+- **The snapshot-and-diff logic is duplicated** between `scripts/sync-nav.ts`'s `runSync` and
+  `syncNavsWithPartialReport` in `server/services/nav-sync.ts`. A candidate for consolidation, not
+  done here to keep this closing task to verification and documentation.
+
+**Phases 1 to 4 were commits `0c4882e..3ffb298`.** The database and its seeded portfolio, the Yahoo
+provider over recorded fixtures, idempotent NAV sync, materialisation into frozen purchases, and
+the read model that produces the exact figures the dashboard renders.
 
 ### Rulings already made, so they are not re-litigated
 
@@ -81,6 +106,10 @@ That is now the standing arrangement rather than an exception: see *How work is 
 `CLAUDE.md`. Tasks 1 to 6 were reviewed independently; from task 7 onwards nothing is, so the
 deferred findings above are the last list any outside reader produced for this plan.
 
+None of the findings above were fixed while closing plan 2 — task 18 is verification and
+documentation, not a cleanup pass — so they carry forward into plan 3's backlog alongside the
+*Findings this plan leaves for plan 3* above.
+
 ## Deferred by decision
 
 **Typography.** `Inter` is imported on line 1 of `app/assets/css/tailwind.css`. The design hook
@@ -100,6 +129,6 @@ the command is:
 
 ## Housekeeping
 
-**`pnpm sync:nav` is specified but not written.** Section 9 of the spec describes it; the README
-deliberately omits it. It is task 11, in phase 3 of plan 2 — it needs the Yahoo provider of phase 2
-to exist first.
+~~`pnpm sync:nav` is specified but not written.~~ Written in task 11 and documented in the README
+since task 18. Verified idempotent by running it twice in a row against the real Yahoo API: 27
+NAVs for each fund, 54 rows total, before and after the second run.
