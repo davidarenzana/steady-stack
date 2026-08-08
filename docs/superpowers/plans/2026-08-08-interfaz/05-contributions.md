@@ -21,7 +21,7 @@ line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 - [x] Task 5.1 — Input parsing and weight formatting
 - [x] Task 5.2 — `<ContributionMonthsTable>`
 - [x] Task 5.3 — `<RulesList>`
-- [ ] Task 5.4 — `<RuleForm>`
+- [x] Task 5.4 — `<RuleForm>`
 - [ ] Task 5.5 — `<OverrideForm>`
 - [ ] Task 5.6 — The contributions page
 - [ ] Task 5.7 — The contributions screen renders against a real database
