@@ -1,11 +1,12 @@
-import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { loadFixture } from './__fixtures__/load'
 import { createYahooProvider, parseChartResponse, parseSearchResponse } from './yahoo'
 
+const FIXTURES_DIR = fileURLToPath(new URL('./__fixtures__', import.meta.url))
+
 function fixture(relativePath: string): unknown {
-  const path = fileURLToPath(new URL(`./__fixtures__/${relativePath}`, import.meta.url))
-  return JSON.parse(readFileSync(path, 'utf8'))
+  return loadFixture(FIXTURES_DIR, relativePath)
 }
 
 describe('parseChartResponse', () => {
@@ -254,6 +255,50 @@ describe('createYahooProvider', () => {
     }
     finally {
       globalThis.fetch = originalFetch
+    }
+  })
+})
+
+describe('the network guard', () => {
+  // `STEADY_STACK_FORBID_NETWORK` is read from `process.env` inside
+  // `defaultFetchJson`, which has no seam for injecting an env object — its
+  // signature is fixed by `PriceProvider`'s `fetchJson` contract. Mutating
+  // `process.env` for the duration of one `it`, restored in `finally`, is
+  // the same trade-off `globalThis.fetch` gets in the test above.
+  it('refuses a real request when no fixture matches it', async () => {
+    const original = process.env.STEADY_STACK_FORBID_NETWORK
+    process.env.STEADY_STACK_FORBID_NETWORK = '1'
+
+    try {
+      const provider = createYahooProvider()
+      await expect(provider.resolve('XX0000000000')).rejects.toThrow(
+        'Refused a real network request in a test: https://query2.finance.yahoo.com/v1/finance/search?q=XX0000000000',
+      )
+    }
+    finally {
+      if (original === undefined) delete process.env.STEADY_STACK_FORBID_NETWORK
+      else process.env.STEADY_STACK_FORBID_NETWORK = original
+    }
+  })
+
+  it('serves a committed fixture instead of the network when one matches the request', async () => {
+    const original = process.env.STEADY_STACK_FORBID_NETWORK
+    process.env.STEADY_STACK_FORBID_NETWORK = '1'
+
+    try {
+      const provider = createYahooProvider()
+      const candidates = await provider.resolve('IE00BYX5NX33')
+      const symbols = candidates.map(c => c.symbol)
+
+      expect(symbols).toContain('0P0001CLDK.F')
+      expect(symbols).toContain('IE00BYX5NX33.SG')
+      // A price other than null only happens if the guard actually served
+      // the recorded chart fixture rather than silently returning nothing.
+      expect(candidates.find(c => c.symbol === '0P0001CLDK.F')?.price).not.toBeNull()
+    }
+    finally {
+      if (original === undefined) delete process.env.STEADY_STACK_FORBID_NETWORK
+      else process.env.STEADY_STACK_FORBID_NETWORK = original
     }
   })
 })

@@ -1,10 +1,65 @@
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { IsoDate, NavPoint } from '~~/core/types'
 import Decimal from '~~/core/decimal'
+import { loadFixture } from './__fixtures__/load'
 import type { PriceProvider, SymbolCandidate } from './types'
 import { PriceProviderError } from './types'
 
 export const YAHOO_SEARCH_URL = 'https://query2.finance.yahoo.com/v1/finance/search'
 export const YAHOO_CHART_URL = 'https://query2.finance.yahoo.com/v8/finance/chart'
+
+/**
+ * Where the committed Yahoo fixtures live. `STEADY_STACK_YAHOO_FIXTURES_DIR`
+ * wins when set — this is what lets a route test, running in a Nitro-built
+ * subprocess, point back at the fixtures directory Vitest resolved
+ * correctly in the parent process, exactly the way `MIGRATIONS_FOLDER`
+ * crosses that same boundary. `import.meta.url` is otherwise the fallback:
+ * correct under Vitest and under `tsx`, wrong once rollup bundles this file
+ * for `nuxt dev` or `nuxt build`, but this path is only ever read when
+ * `STEADY_STACK_FORBID_NETWORK` is set, which production never sets.
+ */
+export function resolveYahooFixturesDir(env: NodeJS.ProcessEnv = process.env): string {
+  const configured = env.STEADY_STACK_YAHOO_FIXTURES_DIR?.trim()
+  if (configured) {
+    return resolve(process.cwd(), configured)
+  }
+  return fileURLToPath(new URL('./__fixtures__', import.meta.url))
+}
+
+export const YAHOO_FIXTURES_DIR = resolveYahooFixturesDir()
+
+/**
+ * Whether this process is forbidden from making a real Yahoo request.
+ * `STEADY_STACK_FORBID_NETWORK` is the structural half of the "no test
+ * touches the network" rule in `__fixtures__/README.md`: a route test sets
+ * it through `setupRouteServer()`, production never sets it, and a handler
+ * that reaches `defaultFetchJson` anyway fails loudly instead of quietly
+ * opening a socket.
+ */
+function networkForbidden(env: NodeJS.ProcessEnv = process.env): boolean {
+  return Boolean(env.STEADY_STACK_FORBID_NETWORK?.trim())
+}
+
+/**
+ * Maps a Yahoo request URL to the recorded fixture that would answer it,
+ * following the naming convention `capture:fixtures` already writes to —
+ * `recorded/search-<isin>.json` and `recorded/chart-<symbol>.json`. Returns
+ * `undefined` for a URL with no committed recording; the caller decides what
+ * that means.
+ */
+function recordedFixtureFor(url: string): string | undefined {
+  const parsed = new URL(url)
+  if (url.startsWith(`${YAHOO_SEARCH_URL}?`)) {
+    const isin = parsed.searchParams.get('q')
+    return isin ? `recorded/search-${isin}.json` : undefined
+  }
+  if (url.startsWith(`${YAHOO_CHART_URL}/`)) {
+    const symbol = decodeURIComponent(parsed.pathname.slice(new URL(YAHOO_CHART_URL).pathname.length + 1))
+    return symbol.length > 0 ? `recorded/chart-${symbol}.json` : undefined
+  }
+  return undefined
+}
 
 /**
  * These funds publish four decimal places. Rounding to that precision is
@@ -158,7 +213,35 @@ function rangeFor(from: IsoDate, to: IsoDate): string {
   return 'max'
 }
 
+/**
+ * The real fetcher, used whenever `createYahooProvider` is not given an
+ * injected one — which is every call from `server/api/**`. Guarded by
+ * `STEADY_STACK_FORBID_NETWORK`: with it set, this function never opens a
+ * socket. It serves a matching recorded fixture when one is committed, so a
+ * route test can exercise a real happy path offline, and otherwise throws a
+ * `PriceProviderError` naming the exact URL it refused, so a handler that
+ * reaches the network has a loud, specific failure rather than a hang or a
+ * silent success against a live server.
+ */
 async function defaultFetchJson(url: string): Promise<unknown> {
+  if (networkForbidden()) {
+    const relative = recordedFixtureFor(url)
+    if (relative) {
+      try {
+        return loadFixture(YAHOO_FIXTURES_DIR, relative)
+      }
+      catch {
+        // Named per convention but not committed — fall through to the
+        // refusal below rather than silently reaching the network for it.
+      }
+    }
+    throw new PriceProviderError(
+      `Refused a real network request in a test: ${url}. `
+      + 'STEADY_STACK_FORBID_NETWORK is set; inject fetchJson or add a matching '
+      + 'fixture under server/providers/__fixtures__/recorded/.',
+    )
+  }
+
   const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
   if (!response.ok) {
     throw new PriceProviderError(`Yahoo request failed with status ${response.status} ${response.statusText}: ${url}`)
