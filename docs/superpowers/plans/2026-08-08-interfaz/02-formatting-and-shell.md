@@ -24,7 +24,7 @@ line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 - [x] Task 2.4 — The shadcn-vue components the shell needs
 - [x] Task 2.5 — Shared empty state, error notice and page header
 - [x] Task 2.6 — Layout, navigation and the four routes
-- [ ] Task 2.7 — The screens answer over HTTP
+- [x] Task 2.7 — The screens answer over HTTP
 
 ---
 
