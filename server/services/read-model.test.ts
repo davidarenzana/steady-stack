@@ -161,6 +161,24 @@ describe('portfolioSeries', () => {
     expect(result).toEqual([null, 24_400, 22_400, null])
   })
 
+  it('clamps the current month to asOf, ignoring a NAV dated later in that same month', () => {
+    seedPortfolioAndFunds()
+    seedFixturePurchases()
+    // Quotes in force on asOf, 2026-09-15.
+    insertNav(WORLD_FUND_ID, '2026-09-01', '11')
+    insertNav(EMERGING_FUND_ID, '2026-09-01', '12')
+    // A hand-entered NAV dated after asOf but still inside September — reachable
+    // through PUT /api/nav, where a manual entry outranks a downloaded one.
+    // The September point must not read it.
+    insertNav(WORLD_FUND_ID, '2026-09-20', '99')
+    insertNav(EMERGING_FUND_ID, '2026-09-20', '99')
+
+    const result = portfolioSeries(temp.db, monthRange('2026-09', '2026-09'), '2026-09-15')
+
+    // 16 x 11 + 4 x 12 = 176 € + 48 € = 224,00 €, not the 2026-09-20 quotes.
+    expect(result).toEqual([22_400])
+  })
+
   it('throws NotFoundError when a month it must value has no NAV yet', () => {
     seedPortfolioAndFunds()
     seedFixturePurchases()

@@ -100,8 +100,12 @@ export function currentValuation(
  * in, is `null` — the line stops at today rather than falling to zero.
  *
  * Each included month is valued at every fund's latest NAV on or before that
- * month's last day, which is what makes the series reproducible independently
- * of when it is computed.
+ * month's last day, which is what makes an already-closed month's point
+ * reproducible independently of when it is computed. The month `asOf` falls
+ * in is the one exception: it is valued on or before `asOf` itself, not its
+ * own last day, for the same reason `currentValuation` never reads ahead of
+ * `asOf` — a hand-entered NAV dated later in the same month must not make
+ * today's point on the chart look ahead of today.
  */
 export function portfolioSeries(
   db: AppDatabase,
@@ -117,7 +121,7 @@ export function portfolioSeries(
       return null
     }
 
-    const day = lastDayOfMonth(month)
+    const day = month === asOfMonth ? asOf : lastDayOfMonth(month)
     const purchasesToDate = purchases.filter((p) => p.date <= day)
     if (purchasesToDate.length === 0) {
       return null
