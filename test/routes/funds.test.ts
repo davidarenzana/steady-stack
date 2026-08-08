@@ -7,12 +7,15 @@ import type { FundView } from '../../server/services/read-model'
 /**
  * This file must never call `/api/nav/sync`: it does not set a
  * `providerSymbol` on any fund, so a sync would have nothing to skip on and
- * would try to reach Yahoo for real. It also never sends a real ISIN to
- * `/api/funds/resolve` — the only assertion made against that route here is
- * the 400 raised before the provider is even constructed. The happy path,
- * including the "more than one candidate, none of them picked for you"
- * contract of spec section 6, is exercised against the committed fixtures in
- * `test/routes/network-guard.test.ts` and `server/providers/yahoo.test.ts`.
+ * would try to reach Yahoo for real.
+ *
+ * It does call `/api/funds/resolve` with `IE00BYX5NX33`, which is safe
+ * because a fixture is committed for it and the server runs under
+ * `STEADY_STACK_FORBID_NETWORK`: the handler is served from disk and a real
+ * request would throw rather than open a socket. That call is here, and not
+ * only in `test/routes/network-guard.test.ts`, because it asserts route 8's
+ * substance rather than the guard's — and nobody looking for the contract of
+ * a route reads a file named after the network guard.
  */
 const database = await setupRouteServer()
 
@@ -158,5 +161,23 @@ describe('GET /api/funds/resolve', () => {
     const response = await fetch(withQuery('/api/funds/resolve', {}))
 
     expect(response.status).toBe(400)
+  })
+
+  it('returns every share class of an ISIN and picks none of them', async () => {
+    // Section 6 of the spec: one ISIN publishes several share classes at
+    // different prices — 0P0001CLDK.F at 9,99 € against IE00BYX5NX33.SG at
+    // 14,33 € — and only the user's own statement says which they hold.
+    //
+    // Asserted by set and by count, never by position. `pnpm capture:fixtures`
+    // re-records these responses, and Yahoo is free to order them differently
+    // when it does; an assertion that leaned on the current order would keep
+    // passing while silently guarding nothing.
+    const response = await fetch(withQuery('/api/funds/resolve', { isin: 'IE00BYX5NX33' }))
+    expect(response.status).toBe(200)
+
+    const symbols = ((await response.json()) as Array<{ symbol: string }>).map(c => c.symbol)
+
+    expect(symbols.length).toBeGreaterThanOrEqual(2)
+    expect(new Set(symbols)).toEqual(new Set(['IE00BYX5NX33.SG', '0P0001CLDK.F']))
   })
 })
