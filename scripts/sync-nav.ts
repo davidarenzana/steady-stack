@@ -18,8 +18,9 @@ import { syncNavs, type NavSyncFundResult } from '../server/services/nav-sync'
 import { createYahooProvider } from '../server/providers/yahoo'
 import type { PriceProvider } from '../server/providers/types'
 import { today } from '../server/utils/today'
+import { resolveDatabaseFile } from '../server/utils/database'
 
-const DATABASE_FILE = 'data/steady-stack.db'
+const DATABASE_FILE = resolveDatabaseFile()
 
 const FUND_COLUMN_WIDTH = 11
 const STATUS_COLUMN_WIDTH = 12

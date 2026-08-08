@@ -1,7 +1,8 @@
 import { applyMigrations, openDatabase } from '../server/db/client'
 import { seedInitialData } from '../server/db/seed'
+import { resolveDatabaseFile } from '../server/utils/database'
 
-const DATABASE_FILE = 'data/steady-stack.db'
+const DATABASE_FILE = resolveDatabaseFile()
 
 const handle = openDatabase(DATABASE_FILE)
 applyMigrations(handle)

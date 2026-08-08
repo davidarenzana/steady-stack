@@ -21,4 +21,14 @@ describe('resolveDatabaseFile', () => {
     const env = { STEADY_STACK_DATABASE_FILE: '' }
     expect(resolveDatabaseFile(env)).toBe(resolve(process.cwd(), 'data/steady-stack.db'))
   })
+
+  it('treats a whitespace-only value as unset', () => {
+    const env = { STEADY_STACK_DATABASE_FILE: '   ' }
+    expect(resolveDatabaseFile(env)).toBe(resolve(process.cwd(), 'data/steady-stack.db'))
+  })
+
+  it('trims surrounding whitespace off an otherwise valid value', () => {
+    const env = { STEADY_STACK_DATABASE_FILE: '  tmp/custom.db  ' }
+    expect(resolveDatabaseFile(env)).toBe(resolve(process.cwd(), 'tmp/custom.db'))
+  })
 })
