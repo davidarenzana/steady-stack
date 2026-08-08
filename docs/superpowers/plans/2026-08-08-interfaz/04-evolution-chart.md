@@ -19,7 +19,7 @@ the `committer` agent writes the message — no conventional-commit prefix, no c
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
 - [x] Task 4.1 — The mapper, `buildEvolutionSeries`
-- [ ] Task 4.2 — The visible range, and why it is not the whole horizon
+- [x] Task 4.2 — The visible range, and why it is not the whole horizon
 - [ ] Task 4.3 — `<EvolutionChart>` over Unovis
 - [ ] Task 4.4 — The chart on the dashboard
 - [ ] Task 4.5 — The chart is on the page, over HTTP
