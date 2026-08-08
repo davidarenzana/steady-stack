@@ -13,6 +13,8 @@
     "postinstall": "nuxt prepare",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:fast": "vitest run --project core --project server --project app",
+    "test:routes": "vitest run --project routes",
     "typecheck": "nuxt typecheck",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

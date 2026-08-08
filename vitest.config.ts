@@ -34,6 +34,26 @@ export default defineConfig({
           environment: 'happy-dom',
         },
       },
+      {
+        // Route tests. Each file boots a real Nuxt server through @nuxt/test-utils,
+        // which is the only way `h3` resolves — the same constraint that confined
+        // Nitro auto-imports to `server/api/**` throughout plan 2. `fileParallelism:
+        // false` keeps six Nuxt builds from running at once — Vitest 4 folded
+        // `poolOptions.forks.singleFork` into this top-level option; see
+        // https://vitest.dev/guide/migration#pool-rework.
+        resolve: {
+          alias: { '~~': fileURLToPath(new URL('.', import.meta.url)) },
+        },
+        test: {
+          name: 'routes',
+          include: ['test/routes/**/*.test.ts'],
+          environment: 'node',
+          pool: 'forks',
+          fileParallelism: false,
+          hookTimeout: 180_000,
+          testTimeout: 30_000,
+        },
+      },
     ],
   },
 })
