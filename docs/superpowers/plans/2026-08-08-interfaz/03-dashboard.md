@@ -23,7 +23,7 @@ line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 - [x] Task 3.3 — `<EmptyDashboard>`, the first screen anyone sees
 - [x] Task 3.4 — `<PortfolioSummary>`, and the three interface requirements of spec section 11
 - [x] Task 3.5 — `<FundPositionsTable>`
-- [ ] Task 3.6 — The dashboard page
+- [x] Task 3.6 — The dashboard page
 - [ ] Task 3.7 — The dashboard renders against a real database
 
 ---
