@@ -5,9 +5,10 @@ import { fetchJson, setupRouteServer, withQuery } from '../../server/test-utils/
 import type { FundView } from '../../server/services/read-model'
 
 /**
- * This file must never call `/api/nav/sync`: it does not set a
- * `providerSymbol` on any fund, so a sync would have nothing to skip on and
- * would try to reach Yahoo for real.
+ * This file must never call `/api/nav/sync`: the `providerSymbol` round trip
+ * below sets a real symbol on `world`, and a sync would then have nothing to
+ * skip on — `nav-sync.ts` skips a fund only when its symbol is `null` — so it
+ * would request that symbol's history from Yahoo for real.
  *
  * It does call `/api/funds/resolve` with `IE00BYX5NX33`, which is safe
  * because a fixture is committed for it and the server runs under

@@ -14,15 +14,17 @@ uncovered.
 **Plan 3 is the interface**, not written yet. There is still nothing to open in a browser except
 raw JSON. Its opening phase must be route tests, not screens:
 
-**Route tests are phase 1 of plan 3, not an afterthought.** The count is exact: **26 route files,
-0 route test files.** The whole HTTP layer — every handler under `server/api/` — has no automated
-coverage. Every one of them was verified by hand with `curl` while implementing plan 2, which is
-what that plan's own ending condition asked for, but "verified once by a human" and "covered by a
-test suite" are not the same claim, and only the second one survives a refactor. `@nuxt/test-utils`
-is already a devDependency; its e2e mode resolves `h3` by running a real Nuxt server, which is
-exactly the resolution problem that confined Nitro auto-imports to `server/api/` and
-`server/utils/http.ts` throughout plan 2 (see *Gotchas already paid for* in `CLAUDE.md`). Write the
-route tests against that real server, not against the handlers in isolation.
+~~**Route tests are phase 1 of plan 3, not an afterthought.** The count is exact: 26 route files,
+0 route test files.~~ **Phase 1 is closed.** All 26 handlers under `server/api/` are exercised by
+77 tests across seven files under `test/routes/`, each booting a real Nuxt server through
+`@nuxt/test-utils` against a throwaway SQLite file — which is also the only way `h3` resolves from
+outside Nitro's own dependency tree (see *Gotchas already paid for* in `CLAUDE.md`). "Verified once
+by hand with `curl`" and "covered by a test suite" are not the same claim, and now the second one
+holds too.
+
+The suite is the slow one: `setup()` builds and starts the server once per file, so
+`pnpm test --project routes` takes about 70 seconds against under two for the other three projects
+together. `pnpm test:fast` skips it for the inner loop.
 
 ## Findings this plan leaves for plan 3
 
