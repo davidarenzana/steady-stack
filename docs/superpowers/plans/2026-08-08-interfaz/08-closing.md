@@ -18,8 +18,30 @@ the `committer` agent writes the message — no conventional-commit prefix, no c
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
 - [x] Task 8.1 — The invariant audit
-- [ ] Task 8.2 — The whole suite, the build, and the production server
+- [x] Task 8.2 — The whole suite, the build, and the production server
 - [ ] Task 8.3 — `README.md` and `TODO.md`
+
+### What task 8.2 measured
+
+`pnpm test` exits 0 with **679 tests over 58 files** across the four projects. `pnpm typecheck` and
+`pnpm build` both exit 0.
+
+**Use a free port, and check what answered.** The first attempt at this task appeared to prove that
+a `.output` server started from an unrelated directory works with no environment variables at all —
+`GET /api/portfolio` returned the real seeded portfolio. It was the developer's own `nuxt dev`
+server answering. `nuxt dev` listens on `[::1]:3000` and the production build binds `[::]:3000`, so
+on macOS both bind without an `EADDRINUSE`, and `curl localhost:3000` resolves to `::1` and reaches
+the dev server. Every run below used `PORT=3100` and `127.0.0.1` instead.
+
+| Run | Result |
+|---|---|
+| From the project root | `GET /api/portfolio` 200 with the seeded portfolio; `/`, `/fondos`, `/aportaciones` and `/escenarios` all 200 |
+| From another directory, no variables | **500 on every database-backed route**, `Can't find meta/_journal.json file`, and a stray empty `data/steady-stack.db` created under that directory |
+| From another directory, both variables set | `GET /api/portfolio` **404 `Portfolio "index" not found`** — the correct answer, the database being migrated but never seeded — `GET /api/funds` 200 `[]`, no request error logged, no `data/` created, and `data/steady-stack.db` untouched |
+
+So **plan 2's finding is narrowed, not closed**: it went from unavoidable to avoidable with two
+environment variables. The unset case still fails exactly as plan 2 described. That goes to task 8.3
+as an open finding.
 
 ### What the audit of task 8.1 found
 
