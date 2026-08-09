@@ -76,6 +76,71 @@ describe('the four screens', () => {
 })
 
 /**
+ * The funds screen, against the real database.
+ *
+ * **Placed before the dashboard block on purpose.** Everything in this file
+ * shares one server and one SQLite file, and Vitest runs blocks in declaration
+ * order. The dashboard block inserts four NAVs so it has something to value, and
+ * the whole point of the assertions here is a database where neither fund has a
+ * price yet — the state a clean checkout is really in. After the dashboard has
+ * run there is no way back to it.
+ */
+describe('/fondos', () => {
+  it('lists the seeded funds', async () => {
+    const html = await (await fetch('/fondos')).text()
+
+    expect(html).toContain('Fidelity MSCI World Index Fund EUR P Acc')
+    expect(html).toContain('IE00BYX5NX33')
+    expect(html).toContain('Vanguard Emerging Markets Stock Index Fund Inv EUR Acc')
+    expect(html).toContain('IE0031786696')
+  })
+
+  it('shows a fund with no net asset value as unvalued', async () => {
+    // The seed gives both funds `providerSymbol: null` and no NAV at all, which
+    // is exactly the state the inherited finding is about: `buildFundsView`
+    // reports such a fund as worth `0`, and printing that zero would claim the
+    // fund is worth nothing rather than that nobody has downloaded its price.
+    const html = await (await fetch('/fondos')).text()
+
+    expect(html).toContain('Sin símbolo')
+    expect(html).not.toContain('NaN')
+
+    // Both funds, and asserted cell by cell rather than as a blanket
+    // `not.toContain('0,00 €')` over the document. The plan asks for the blanket
+    // form and it fails for a reason worth recording: the `Aportado` column
+    // really does render `0,00 €` here, and it is right to. Nothing has been
+    // paid into either fund, so zero is what was paid in — a true figure, not
+    // the unknown one the ruling is about. The claim that matters is narrower:
+    // no *value* cell prints a euro amount, because no fund has a price.
+    const valueCells = html.match(/data-testid="fund-value"[^>]*>.*?<\/td>/g) ?? []
+    expect(valueCells).toHaveLength(2)
+    for (const cell of valueCells) {
+      expect(cell).toContain('Sin valoración')
+      expect(cell).not.toContain('€')
+    }
+  })
+
+  it('offers the actions that fill the screen in', async () => {
+    const html = await (await fetch('/fondos')).text()
+
+    expect(html).toContain('Actualizar valores liquidativos')
+    expect(html).toContain('Añadir fondo')
+    expect(html).toContain('Buscar símbolos')
+    expect(html).toContain('Guardar valor liquidativo')
+  })
+
+  it('renders no synchronisation report before one has run', async () => {
+    // A `GET` of this page opens no socket: the sync happens on a click. If this
+    // ever fails, the page is syncing on render and the route suite is reaching
+    // the network — which `STEADY_STACK_FORBID_NETWORK` would then be failing to
+    // catch.
+    const html = await (await fetch('/fondos')).text()
+
+    expect(html).not.toContain('Última sincronización')
+  })
+})
+
+/**
  * The dashboard, against the real database.
  *
  * **Order matters in this block.** Every `it` shares one server and one
