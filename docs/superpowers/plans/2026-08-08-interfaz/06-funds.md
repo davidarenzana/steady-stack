@@ -19,12 +19,12 @@ Tick each task as it closes. **Commit after every task**: the main agent stages 
 the `committer` agent writes the message — no conventional-commit prefix, no co-authorship
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
-- [ ] Task 6.1 — `<FundsTable>`
-- [ ] Task 6.2 — `<SymbolCandidates>`
-- [ ] Task 6.3 — `<AddFundForm>`
-- [ ] Task 6.4 — `<NavSyncReport>` and `<ManualNavForm>`
-- [ ] Task 6.5 — The funds page
-- [ ] Task 6.6 — The funds screen renders against a real database
+- [x] Task 6.1 — `<FundsTable>`
+- [x] Task 6.2 — `<SymbolCandidates>`
+- [x] Task 6.3 — `<AddFundForm>`
+- [x] Task 6.4 — `<NavSyncReport>` and `<ManualNavForm>`
+- [x] Task 6.5 — The funds page
+- [x] Task 6.6 — The funds screen renders against a real database
 
 ---
 
