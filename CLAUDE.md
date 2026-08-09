@@ -16,9 +16,15 @@ pnpm test core/rates.test.ts    # a single test file
 pnpm test -t 'largest remainder'  # a single test by name
 ```
 
-Vitest runs three projects (`vitest.config.ts`): `core` and `server` on the `node` environment,
-`app` on `happy-dom`. `pnpm test --project core` restricts a run to the engine, `--project server`
-to the integration tests over a temporary SQLite file.
+Vitest runs four projects (`vitest.config.ts`): `core` and `server` on the `node` environment, `app`
+on `happy-dom`, and `routes` in forks with `fileParallelism: false`. `pnpm test --project core`
+restricts a run to the engine, `--project server` to the integration tests over a temporary SQLite
+file.
+
+`routes` is the slow one — it builds and starts a real Nuxt server once per test file, about three
+and a half minutes for 100 tests against eleven seconds for the other 579 together. `pnpm test:fast`
+skips it for the inner loop and `pnpm test:routes` runs it alone; `pnpm test` runs everything and is
+what goes before a commit.
 
 ## Architecture
 
@@ -169,17 +175,26 @@ valuation and XIRR.
 client, the row↔domain mappers and typed queries, the seeded initial data of section 13 of the
 spec, the `PriceProvider` interface and the Yahoo implementation over recorded fixtures, idempotent
 NAV sync and materialisation into frozen purchases, the read model that produces the exact figures
-a dashboard would render, and all 26 Nitro routes. 362 tests passing across three Vitest projects,
-none of them opening a network socket. `pnpm typecheck` and `pnpm build` both exit 0, and the built
-`.output` was started and curled for real against `GET /api/portfolio`.
+a dashboard would render, and all 26 Nitro routes.
 
-The HTTP layer itself has no automated coverage — 26 route files, 0 route test files, every one
-verified by hand with `curl` while implementing plan 2. Route tests with `@nuxt/test-utils` are
-phase 1 of plan 3, not an afterthought; see `TODO.md`.
+[Plan 3](docs/superpowers/plans/2026-08-08-interfaz/), the interface, is **complete: all eight
+phases.** Route tests over a real Nuxt server, the formatting module that owns Spanish typography and
+the application shell, the dashboard, the Unovis evolution chart, and the contributions, funds and
+scenarios screens. **679 tests over 58 files across the four Vitest projects**, none of them opening a
+network socket — the rule is structural now rather than a convention, since the route-test setup
+refuses an outbound connection outright. All 26 routes are covered by 100 of those tests.
+`pnpm typecheck` and `pnpm build` exit 0, and a production `.output` server was started and exercised
+from the project root and from an unrelated directory.
 
-No Vue page exists — the interface is plan 3, still unwritten. `TODO.md` holds the open threads,
-including the gap task 18 found in the `process.cwd()` migrations fallback under a production
-build started from outside the project root.
+`pnpm dev` opens four Spanish screens: `/` the dashboard, `/aportaciones`, `/fondos` and
+`/escenarios`. What has no automated coverage is the wiring between them and the routes — the pages
+are exercised only through their server-rendered HTML in `test/routes/pages.test.ts`, and nothing
+clicks a button, because end-to-end browser tests are out of v1 by section 15 of the spec.
+
+`TODO.md` holds the open threads, including the one plan 3 narrowed rather than closed: a `.output`
+server started outside the project root still needs `STEADY_STACK_DATABASE_FILE` and
+`STEADY_STACK_MIGRATIONS_DIR` set, or it answers 500 on every database-backed route and writes a
+stray empty database under whatever directory it started from.
 
 Four commands exist for the database: `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:seed` and
 `pnpm sync:nav`. The seed is idempotent, and so is a sync rerun — verified by running it twice in a
