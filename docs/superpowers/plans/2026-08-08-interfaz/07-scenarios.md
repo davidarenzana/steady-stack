@@ -18,12 +18,12 @@ Tick each task as it closes. **Commit after every task**: the main agent stages 
 the `committer` agent writes the message — no conventional-commit prefix, no co-authorship
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
-- [ ] Task 7.1 — `app/utils/rate.ts`
-- [ ] Task 7.2 — `<ScenariosTable>`
-- [ ] Task 7.3 — `<ScenarioForm>`
-- [ ] Task 7.4 — `<HorizonForm>`
-- [ ] Task 7.5 — The scenarios page
-- [ ] Task 7.6 — The scenarios screen renders against a real database
+- [x] Task 7.1 — `app/utils/rate.ts`
+- [x] Task 7.2 — `<ScenariosTable>`
+- [x] Task 7.3 — `<ScenarioForm>`
+- [x] Task 7.4 — `<HorizonForm>`
+- [x] Task 7.5 — The scenarios page
+- [x] Task 7.6 — The scenarios screen renders against a real database
 
 ---
 

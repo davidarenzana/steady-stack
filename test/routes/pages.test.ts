@@ -295,3 +295,52 @@ describe('/aportaciones', () => {
     expect(html).toMatch(/class="[^"]*tabular-nums/)
   })
 })
+
+/**
+ * The markup a reader sees, without the hydration payload.
+ *
+ * `__NUXT_DATA__` carries every fetched response verbatim so the client can
+ * hydrate without refetching, so the raw `annualRate: '0.09'` is in the document
+ * whatever the screen renders. An assertion about what is *shown* has to exclude
+ * it, or it is really an assertion about how Nuxt serialises state.
+ */
+function renderedMarkup(html: string): string {
+  return html.split('<script type="application/json" data-nuxt-data')[0]!
+}
+
+/** The scenarios screen. Independent of everything above: it reads no purchase and no NAV. */
+describe('/escenarios', () => {
+  it('lists the seeded scenarios with their rates in Spanish typography', async () => {
+    const html = renderedMarkup(await (await fetch('/escenarios')).text())
+
+    expect(html).toContain('Sin interés')
+    expect(html).toContain('Escenario 1')
+    expect(html).toContain('Escenario 2')
+    expect(html).toContain('0 %')
+    expect(html).toContain('5 %')
+    expect(html).toContain('9 %')
+
+    // The rate is rendered, not dumped: neither the decimal string the database
+    // holds nor the English form of the percentage reaches the screen. Asserted
+    // over the markup and not the whole document — see `renderedMarkup`.
+    expect(html).not.toContain('0.09')
+    expect(html).not.toContain('9%')
+    expect(html).not.toContain('NaN')
+  })
+
+  it('shows the horizon the portfolio is projected over', async () => {
+    const html = await (await fetch('/escenarios')).text()
+
+    expect(html).toContain('Horizonte')
+    // Section 13 of the spec: 25 years, and it is the value in the field rather
+    // than only the word next to it.
+    expect(html).toMatch(/data-testid="horizon-years"[^>]*value="25"|value="25"[^>]*data-testid="horizon-years"/)
+  })
+
+  it('offers the colours as theme tokens rather than as hex codes', async () => {
+    const html = await (await fetch('/escenarios')).text()
+
+    expect(html).toContain('var(--chart-1)')
+    expect(html).toContain('chart-5')
+  })
+})
