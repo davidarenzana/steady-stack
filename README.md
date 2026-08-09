@@ -17,7 +17,7 @@ different price.
 
 The calculation engine was built first and tested in isolation, before any database or interface
 existed. That is where the risk lives: a misrounded cent compounds across 300 months of projection.
-Persistence and the network are done; the interface is next.
+The engine, persistence, the network and the interface are all done.
 
 | | |
 |---|---|
@@ -31,13 +31,34 @@ Persistence and the network are done; the interface is next.
 | Idempotent sync and materialisation into purchases | done |
 | Valuation, XIRR and scenario projection off the database | done |
 | Nitro API routes | done |
-| Interface | pending |
+| Route tests over a real Nuxt server | done |
+| Formatting and Spanish typography | done |
+| Dashboard | done |
+| Evolution chart | done |
+| Contributions screen | done |
+| Funds screen | done |
+| Scenarios screen | done |
 
-362 tests passing, none of which opens a network socket. All 26 Nitro routes exist — portfolio,
-funds, contribution rules and overrides, purchases, NAV entry and sync, materialisation, scenarios
-and the dashboard read model — and were verified by hand with `curl`; there is no automated
-coverage of the HTTP layer yet, which is the first thing the next plan adds. There is no interface
-yet either, so there is nothing to open in a browser except the raw JSON each route returns.
+679 tests passing, none of which opens a network socket — the rule is structural rather than a
+convention: the test setup refuses an outbound connection outright. All 26 Nitro routes are
+exercised by 100 tests under `test/routes/`, each booting a real Nuxt server against a throwaway
+SQLite file, so "verified once by hand with `curl`" is no longer the only claim the HTTP layer has.
+
+Four screens, in Spanish:
+
+- **Resumen** — what the portfolio is worth, what was paid in, the capital gain in euros and
+  percent, the XIRR, and a chart of the real portfolio against the enabled scenarios. A fund holding
+  units with no net asset value makes the total unanswerable, and the route says so with a 404
+  rather than under-counting.
+- **Aportaciones** — the rules in force, the exceptions, and the month-by-month calendar the rules
+  expand into, with a button that turns due months into stored purchases. Editing a rule never
+  rewrites the past: a new rule is added with its own starting month.
+- **Fondos** — the funds with their ISINs, symbols, units and latest prices; ISIN resolution listing
+  every share class the provider publishes with its price, so the one matching the statement can be
+  chosen; a refresh button; and manual entry for a value no provider quotes. A fund without a price
+  reads `Sin valoración`, never `0,00 €`.
+- **Escenarios** — the theoretical annual rates, their colours, which are drawn, and the projection
+  horizon in years.
 
 ## Getting started
 
@@ -49,11 +70,18 @@ pnpm dev            # Nuxt dev server
 ```
 
 ```sh
-pnpm test           # one pass with Vitest
+pnpm test           # one pass with Vitest, all four projects
+pnpm test:fast      # core, server and app — the inner loop, about eleven seconds
+pnpm test:routes    # the route tests alone
 pnpm test:watch     # watch mode
 pnpm typecheck      # vue-tsc over the whole project
 pnpm build          # production build
 ```
+
+The `routes` project builds and starts a real Nuxt server once per test file: 100 tests over eight
+files, about three and a half minutes, against eleven seconds for the other 579 tests together. That
+is why the inner loop has its own script — `pnpm test:fast` skips it — and why `pnpm test` is what
+runs before a commit rather than on every save.
 
 ```sh
 pnpm db:generate    # generate a migration from the Drizzle schema
@@ -67,6 +95,20 @@ The database is a single file, `data/steady-stack.db`, and it is created on firs
 or any of the commands above apply pending migrations automatically, so no manual migration step
 sits between a clean checkout and a working server. The file is git-ignored; delete it and reseed
 whenever you want to start over.
+
+Both paths are relative to the working directory, so **a deployed process that does not start from
+the project root has to say where they are**:
+
+```sh
+STEADY_STACK_DATABASE_FILE=/srv/steady-stack/data/steady-stack.db \
+STEADY_STACK_MIGRATIONS_DIR=/srv/steady-stack/server/db/migrations \
+  node /srv/steady-stack/.output/server/index.mjs
+```
+
+Without them, a `.output` server started from anywhere but the project root answers 500 on every
+database-backed route — `Can't find meta/_journal.json file` — and writes a stray empty database
+under whatever directory it was started from. Started from the project root, neither variable is
+needed.
 
 `pnpm db:generate` reads the Drizzle schema in `server/db/schema.ts` and writes a new migration
 file under `server/db/migrations/` when it has changed; `pnpm db:migrate` applies whatever is
@@ -118,6 +160,10 @@ overstates the result by 14.415 €. The correct rate is 0,7207 %, which turns 1
   — the implementation plan for the calculation engine, complete
 - [`docs/superpowers/plans/2026-08-07-persistencia-y-red.md`](docs/superpowers/plans/2026-08-07-persistencia-y-red.md)
   — the implementation plan for persistence and the network, complete
+- [`docs/superpowers/plans/2026-08-08-interfaz/`](docs/superpowers/plans/2026-08-08-interfaz/)
+  — the implementation plan for the interface, eight phases, complete
+- [`TODO.md`](TODO.md) — what is still open, and the rulings already made so they are not
+  re-litigated
 
 ## Conventions
 

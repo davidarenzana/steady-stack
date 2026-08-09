@@ -19,7 +19,7 @@ line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
 - [x] Task 8.1 — The invariant audit
 - [x] Task 8.2 — The whole suite, the build, and the production server
-- [ ] Task 8.3 — `README.md` and `TODO.md`
+- [x] Task 8.3 — `README.md` and `TODO.md`
 
 ### What task 8.2 measured
 
