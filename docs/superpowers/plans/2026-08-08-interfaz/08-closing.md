@@ -17,9 +17,28 @@ Tick each task as it closes. **Commit after every task**: the main agent stages 
 the `committer` agent writes the message — no conventional-commit prefix, no co-authorship
 line, subject in the imperative, body hand-wrapped at 80 columns saying why.
 
-- [ ] Task 8.1 — The invariant audit
+- [x] Task 8.1 — The invariant audit
 - [ ] Task 8.2 — The whole suite, the build, and the production server
 - [ ] Task 8.3 — `README.md` and `TODO.md`
+
+### What the audit of task 8.1 found
+
+Every one of the thirteen claims holds. Two of the commands needed correcting rather than the code,
+and both corrections are recorded here so the next reader does not repeat the confusion:
+
+- **`grep -rl "@unovis" app/` returns two files, not one**: `EvolutionChart.vue` and
+  `EvolutionChart.test.ts`. The test's hit is the `vi.mock('@unovis/vue')` string that phase 4
+  mandated, so the invariant — one *component* touches Unovis — holds. The command as written
+  cannot express that.
+- **The `core/` baseline in the table is wrong.** `3ffb298` closed plan 2's *phases 1 to 4*, not
+  plan 2; `core/purchases.ts` gained `unitsFor` afterwards in `90fd8af`, which is plan 2's own route
+  phase. Against `5e01913`, the commit that actually closed plan 2, `git diff --stat 5e01913 HEAD --
+  core/` is empty: plan 3 changed nothing under `core/`.
+
+Also confirmed by reading: **no component performs arithmetic on money.** The only arithmetic in
+`app/` outside `format.ts`, `parse.ts`, `rate.ts` and `centsToEuros` is on things that are not money
+— percentages summed to 100 in `RuleForm.vue`, a count of years in `HorizonForm.vue`, and month
+indices in `evolution-range.ts`.
 
 ---
 
