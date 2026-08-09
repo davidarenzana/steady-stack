@@ -1,4 +1,4 @@
-import type { Dashboard, FundPositionView } from '~~/server/services/read-model'
+import type { Dashboard, FundPositionView, FundView } from '~~/server/services/read-model'
 
 /**
  * Fixtures for the component tests, imported by tests and never by a
@@ -55,6 +55,29 @@ export function makeDashboard(overrides: {
     ...(overrides.xirr !== undefined ? { xirr: overrides.xirr } : {}),
     valuation: { ...base.valuation, ...overrides.valuation },
     series: { ...base.series, ...overrides.series },
+  }
+}
+
+/**
+ * One fund of the funds screen, the same 160 units of `world` at 11 € the
+ * position fixture describes — worth 1.760 € against 1.600 € paid in.
+ *
+ * `latestNav: null` is the override the funds tests care about most: it is the
+ * shape `buildFundsView` returns alongside `value: 0` for a fund whose price
+ * nobody has downloaded yet.
+ */
+export function makeFund(overrides: Partial<FundView> = {}): FundView {
+  return {
+    id: 'world',
+    isin: 'IE00BYX5NX33',
+    name: 'Fidelity MSCI World Index Fund EUR P Acc',
+    providerSymbol: '0P0001CLDK.F',
+    currency: 'EUR',
+    latestNav: { date: '2026-08-03', value: '11.0000', source: 'yahoo' },
+    units: '160.000000',
+    invested: 160000,
+    value: 176000,
+    ...overrides,
   }
 }
 
